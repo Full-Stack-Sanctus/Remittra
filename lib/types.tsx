@@ -10,7 +10,7 @@ export interface User {
 export interface WalletTransaction {
   id: string;
   user_id: string;
-  type: 'deposit' | 'withdraw';
+  type: "deposit" | "withdraw";
   amount: number;
   created_at: string;
 }
