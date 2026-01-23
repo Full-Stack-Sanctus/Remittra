@@ -10,17 +10,18 @@ on:
 
 jobs:
   build:
-    name: Build, Lint, and Deploy
+    name: Build, Lint, Prettier, and Deploy
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout repository with PAT for push access
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  # needed to push back
+          token: ${{ secrets.PAT_TOKEN }}  # <-- Your Personal Access Token
+          persist-credentials: true
 
-      # 2️⃣ Setup Node
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -31,15 +32,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4️⃣ Lint code
-      - name: Run ESLint
+      # 4️⃣ Run ESLint
+      - name: Lint code
         run: npm run lint
 
       # 5️⃣ TypeScript check
       - name: TypeScript check
         run: npm run type-check
 
-      # 6️⃣ Prettier auto-fix
+      # 6️⃣ Prettier auto-fix and push
       - name: Prettier auto-fix
         run: |
           npx prettier --write .
@@ -53,7 +54,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      # 8️⃣ Deploy to Vercelvercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  # optional if in a team
+      # 8️⃣ Deploy to Vercel vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  # optional if using a team
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
