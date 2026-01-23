@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useUser } from '@/hooks/useUser';
-import Button from '@/components/Button';
+import { useEffect, useState } from "react";
+import { useUser } from "@/hooks/useUser";
+import Button from "@/components/Button";
 
 export default function WalletPage() {
   const { user, loading } = useUser();
@@ -14,7 +14,7 @@ export default function WalletPage() {
     let mounted = true;
 
     const fetchWallet = async () => {
-      const data = await fetch('/api/wallet').then(r => r.json());
+      const data = await fetch("/api/wallet").then((r) => r.json());
       if (mounted) setBalance(data.balance ?? 0);
     };
 
@@ -28,13 +28,13 @@ export default function WalletPage() {
   const deposit = async () => {
     if (!user) return;
 
-    await fetch('/api/wallet/deposit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/wallet/deposit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id, amount }),
     });
 
-    setBalance(prev => prev + amount);
+    setBalance((prev) => prev + amount);
     setAmount(0);
   };
 
@@ -51,7 +51,7 @@ export default function WalletPage() {
         className="border p-2 mr-2"
         placeholder="Amount"
         value={amount}
-        onChange={e => setAmount(Number(e.target.value))}
+        onChange={(e) => setAmount(Number(e.target.value))}
       />
 
       <Button onClick={deposit}>Deposit</Button>

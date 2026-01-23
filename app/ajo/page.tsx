@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useUser } from '@/hooks/useUser';
-import Button from '@/components/Button';
+import { useEffect, useState } from "react";
+import { useUser } from "@/hooks/useUser";
+import Button from "@/components/Button";
 
 type AjoRow = {
   id: string;
@@ -15,14 +15,14 @@ type AjoRow = {
 export default function AjoPage() {
   const { user, loading } = useUser();
   const [ajos, setAjos] = useState<AjoRow[]>([]);
-  const [newAjoName, setNewAjoName] = useState('');
+  const [newAjoName, setNewAjoName] = useState("");
   const [cycleAmount, setCycleAmount] = useState(0);
 
   useEffect(() => {
     let mounted = true;
 
     const fetchAjos = async () => {
-      const data = await fetch('/api/ajos').then(r => r.json());
+      const data = await fetch("/api/ajos").then((r) => r.json());
       if (mounted) setAjos(data);
     };
 
@@ -34,16 +34,16 @@ export default function AjoPage() {
   }, []);
 
   const refresh = async () => {
-    const data = await fetch('/api/ajos').then(r => r.json());
+    const data = await fetch("/api/ajos").then((r) => r.json());
     setAjos(data);
   };
 
   const createAjo = async () => {
     if (!user) return;
 
-    await fetch('/api/ajos/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/ajos/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: newAjoName,
         createdBy: user.id,
@@ -51,7 +51,7 @@ export default function AjoPage() {
       }),
     });
 
-    setNewAjoName('');
+    setNewAjoName("");
     setCycleAmount(0);
     await refresh();
   };
@@ -59,25 +59,25 @@ export default function AjoPage() {
   const joinAjo = async (ajoId: string) => {
     if (!user) return;
 
-    await fetch('/api/ajos/join', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/ajos/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ajoId, userId: user.id }),
     });
 
-    alert('Joined Ajo!');
+    alert("Joined Ajo!");
   };
 
   const contribute = async (ajoId: string) => {
     if (!user) return;
 
-    await fetch('/api/ajos/contribute', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/ajos/contribute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ajoId, userId: user.id }),
     });
 
-    alert('Contribution successful!');
+    alert("Contribution successful!");
   };
 
   if (loading) return <div className="p-4">Loading...</div>;
@@ -94,7 +94,7 @@ export default function AjoPage() {
           className="border p-2 mr-2"
           placeholder="Ajo Name"
           value={newAjoName}
-          onChange={e => setNewAjoName(e.target.value)}
+          onChange={(e) => setNewAjoName(e.target.value)}
         />
 
         <input
@@ -102,13 +102,13 @@ export default function AjoPage() {
           type="number"
           placeholder="Cycle Amount"
           value={cycleAmount}
-          onChange={e => setCycleAmount(Number(e.target.value))}
+          onChange={(e) => setCycleAmount(Number(e.target.value))}
         />
 
         <Button onClick={createAjo}>Create</Button>
       </div>
 
-      {ajos.map(ajo => (
+      {ajos.map((ajo) => (
         <div key={ajo.id} className="border p-4 mb-2 rounded">
           <h3 className="font-semibold">{ajo.name}</h3>
           <p>Cycle Amount: ₦{ajo.cycle_amount}</p>
@@ -118,9 +118,7 @@ export default function AjoPage() {
             Join
           </Button>
 
-          <Button onClick={() => contribute(ajo.id)}>
-            Contribute
-          </Button>
+          <Button onClick={() => contribute(ajo.id)}>Contribute</Button>
         </div>
       ))}
     </div>

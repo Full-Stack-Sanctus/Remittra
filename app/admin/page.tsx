@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Button from '@/components/Button';
+import { useEffect, useState } from "react";
+import Button from "@/components/Button";
 
 type UserRow = {
   id: string;
@@ -24,8 +24,8 @@ export default function AdminPage() {
 
     const fetchData = async () => {
       const [usersRes, ajosRes] = await Promise.all([
-        fetch('/api/users').then(r => r.json()),
-        fetch('/api/ajos').then(r => r.json()),
+        fetch("/api/users").then((r) => r.json()),
+        fetch("/api/ajos").then((r) => r.json()),
       ]);
 
       if (!mounted) return;
@@ -42,26 +42,26 @@ export default function AdminPage() {
 
   const refresh = async () => {
     const [usersRes, ajosRes] = await Promise.all([
-      fetch('/api/users').then(r => r.json()),
-      fetch('/api/ajos').then(r => r.json()),
+      fetch("/api/users").then((r) => r.json()),
+      fetch("/api/ajos").then((r) => r.json()),
     ]);
     setUsers(usersRes);
     setAjos(ajosRes);
   };
 
   const toggleKYC = async (id: string, verified: boolean) => {
-    await fetch('/api/admin/toggle-kyc', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/admin/toggle-kyc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: id, verified }),
     });
     await refresh();
   };
 
   const advanceCycle = async (ajoId: string) => {
-    await fetch('/api/admin/advance-cycle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/admin/advance-cycle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ajoId }),
     });
     await refresh();
@@ -73,22 +73,22 @@ export default function AdminPage() {
 
       <div className="mb-6">
         <h2 className="font-semibold mb-2">Users</h2>
-        {users.map(u => (
+        {users.map((u) => (
           <div
             key={u.id}
             className="border p-2 mb-2 flex justify-between items-center"
           >
             <span>{u.email}</span>
-            <span>KYC: {u.kyc_verified ? '✅' : '❌'}</span>
+            <span>KYC: {u.kyc_verified ? "✅" : "❌"}</span>
             <Button onClick={() => toggleKYC(u.id, !u.kyc_verified)}>
-              {u.kyc_verified ? 'Unverify' : 'Verify'}
+              {u.kyc_verified ? "Unverify" : "Verify"}
             </Button>
           </div>
         ))}
       </div>
 
       <h2 className="font-semibold mb-2">Ajo Groups</h2>
-      {ajos.map(a => (
+      {ajos.map((a) => (
         <div
           key={a.id}
           className="border p-2 mb-2 flex justify-between items-center"
@@ -96,9 +96,7 @@ export default function AdminPage() {
           <span>
             {a.name} — Cycle {a.current_cycle}
           </span>
-          <Button onClick={() => advanceCycle(a.id)}>
-            Advance Cycle
-          </Button>
+          <Button onClick={() => advanceCycle(a.id)}>Advance Cycle</Button>
         </div>
       ))}
     </div>
