@@ -18,7 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.PAT_TOKEN }}  # <-- Your Personal Access Token
+          token: ${{ secrets.PAT_TOKEN }} # <-- Your Personal Access Token
           persist-credentials: true
 
       # 2️⃣ Setup Node.js
@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       # 3️⃣ Install dependencies
       - name: Install dependencies
@@ -60,5 +60,5 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          vercel-args: "--prod"
           working-directory: ./
