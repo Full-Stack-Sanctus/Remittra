@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { useUser } from '@/hooks/useUser';
 import Button from '@/components/Button';
@@ -15,27 +16,44 @@ export default function AjoPage() {
   const { user, loading } = useUser();
   const [ajos, setAjos] = useState<AjoRow[]>([]);
   const [newAjoName, setNewAjoName] = useState('');
-  const [cycleAmount, setCycleAmount] = useState<number>(0);
+  const [cycleAmount, setCycleAmount] = useState(0);
 
-  const fetchAjos = async () => {
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchAjos = async () => {
+      const data = await fetch('/api/ajos').then(r => r.json());
+      if (mounted) setAjos(data);
+    };
+
+    fetchAjos();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const refresh = async () => {
     const data = await fetch('/api/ajos').then(r => r.json());
     setAjos(data);
   };
-
-  useEffect(() => { fetchAjos(); }, []);
 
   const createAjo = async () => {
     if (!user) return;
 
     await fetch('/api/ajos/create', {
       method: 'POST',
-      body: JSON.stringify({ name: newAjoName, createdBy: user.id, cycleAmount }),
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newAjoName,
+        createdBy: user.id,
+        cycleAmount,
+      }),
     });
 
     setNewAjoName('');
     setCycleAmount(0);
-    fetchAjos();
+    await refresh();
   };
 
   const joinAjo = async (ajoId: string) => {
@@ -43,8 +61,8 @@ export default function AjoPage() {
 
     await fetch('/api/ajos/join', {
       method: 'POST',
-      body: JSON.stringify({ ajoId, userId: user.id }),
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ajoId, userId: user.id }),
     });
 
     alert('Joined Ajo!');
@@ -55,8 +73,8 @@ export default function AjoPage() {
 
     await fetch('/api/ajos/contribute', {
       method: 'POST',
-      body: JSON.stringify({ ajoId, userId: user.id }),
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ajoId, userId: user.id }),
     });
 
     alert('Contribution successful!');
@@ -71,25 +89,26 @@ export default function AjoPage() {
 
       <div className="mb-6">
         <h2 className="font-semibold mb-2">Create New Ajo</h2>
+
         <input
+          className="border p-2 mr-2"
           placeholder="Ajo Name"
           value={newAjoName}
-          onChange={(e) => setNewAjoName(e.target.value)}
-          className="border p-2 mr-2"
+          onChange={e => setNewAjoName(e.target.value)}
         />
+
         <input
+          className="border p-2 mr-2"
           type="number"
           placeholder="Cycle Amount"
           value={cycleAmount}
-          onChange={(e) => setCycleAmount(Number(e.target.value))}
-          className="border p-2 mr-2"
+          onChange={e => setCycleAmount(Number(e.target.value))}
         />
-        <Button onClick={createAjo} disabled={!user}>
-          Create
-        </Button>
+
+        <Button onClick={createAjo}>Create</Button>
       </div>
 
-      {ajos.map((ajo) => (
+      {ajos.map(ajo => (
         <div key={ajo.id} className="border p-4 mb-2 rounded">
           <h3 className="font-semibold">{ajo.name}</h3>
           <p>Cycle Amount: ₦{ajo.cycle_amount}</p>
@@ -98,7 +117,10 @@ export default function AjoPage() {
           <Button className="mr-2" onClick={() => joinAjo(ajo.id)}>
             Join
           </Button>
-          <Button onClick={() => contribute(ajo.id)}>Contribute</Button>
+
+          <Button onClick={() => contribute(ajo.id)}>
+            Contribute
+          </Button>
         </div>
       ))}
     </div>
