@@ -1,0 +1,56 @@
+name: Build & Deploy Next.js to Vercel
+
+on:
+  push:
+    branches:
+      - main  # Change if your default branch is different
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4️⃣ Lint code
+      - name: Run ESLint
+        run: npm run lint
+
+      # 5️⃣ Type check
+      - name: TypeScript check
+        run: npm run type-check
+
+      # 6️⃣ Run Prettier check (optional)
+      - name: Prettier check
+        run: npm run prettier:check
+
+      # 7️⃣ Build Next.js app
+      - name: Build
+        run: npm run build
+
+      # 8️⃣ Deploy to Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
