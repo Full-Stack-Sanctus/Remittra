@@ -3,20 +3,22 @@ name: Build & Deploy Next.js to Vercel
 on:
   push:
     branches:
-      - main  # Change if your default branch is different
+      - main
   pull_request:
     branches:
       - main
 
 jobs:
   build:
-    name: Build and Test
+    name: Build, Lint, and Deploy
     runs-on: ubuntu-latest
 
     steps:
       # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: true  # needed to push back
 
       # 2️⃣ Setup Node
       - name: Setup Node.js
@@ -33,19 +35,25 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      # 5️⃣ Type check
+      # 5️⃣ TypeScript check
       - name: TypeScript check
         run: npm run type-check
 
-      # 6️⃣ Run Prettier check (optional)
-      - name: Prettier check
-        run: npm run prettier:check
+      # 6️⃣ Prettier auto-fix
+      - name: Prettier auto-fix
+        run: |
+          npx prettier --write .
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: format code with Prettier [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:main
 
       # 7️⃣ Build Next.js app
       - name: Build
         run: npm run build
 
-      # 8️⃣ Deploy to Vercel: If in a team; vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      # 8️⃣ Deploy to Vercelvercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  # optional if in a team
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
