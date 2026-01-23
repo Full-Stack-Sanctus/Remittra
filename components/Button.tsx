@@ -1,14 +1,12 @@
 import React from 'react';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
-
-export default function Button({ children, ...props }: ButtonProps) {
+export default function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
+      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
       {...props}
-      className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 ${props.className || ''}`}
     >
-      {children}
+      {props.children}
     </button>
   );
 }
