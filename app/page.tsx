@@ -1,13 +1,16 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import Button from '../components/Button';
+import { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
+import Button from "../components/Button";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) alert(error.message);
   };
 

@@ -1,89 +1,89 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabaseClient'
-import { useUser } from '../hooks/useUser'
-import Button from '../components/Button'
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { useUser } from "../hooks/useUser";
+import Button from "../components/Button";
 
 type AjoRow = {
-  id: string
-  name: string
-  created_by: string
-  cycle_amount: number
-  current_cycle: number
-}
+  id: string;
+  name: string;
+  created_by: string;
+  cycle_amount: number;
+  current_cycle: number;
+};
 
 export default function AjoPage() {
-  const { user, loading } = useUser()
+  const { user, loading } = useUser();
 
-  const [ajos, setAjos] = useState<AjoRow[]>([])
-  const [newAjoName, setNewAjoName] = useState('')
-  const [cycleAmount, setCycleAmount] = useState<number>(0)
+  const [ajos, setAjos] = useState<AjoRow[]>([]);
+  const [newAjoName, setNewAjoName] = useState("");
+  const [cycleAmount, setCycleAmount] = useState<number>(0);
 
   useEffect(() => {
     const fetchAjos = async () => {
       const { data, error } = await supabase
-        .from('ajos')
-        .select('id, name, created_by, cycle_amount, current_cycle')
+        .from("ajos")
+        .select("id, name, created_by, cycle_amount, current_cycle");
 
       if (!error && data) {
-        setAjos(data)
+        setAjos(data);
       }
-    }
+    };
 
-    fetchAjos()
-  }, [])
+    fetchAjos();
+  }, []);
 
   const refreshAjos = async () => {
     const { data } = await supabase
-      .from('ajos')
-      .select('id, name, created_by, cycle_amount, current_cycle')
+      .from("ajos")
+      .select("id, name, created_by, cycle_amount, current_cycle");
 
-    if (data) setAjos(data)
-  }
+    if (data) setAjos(data);
+  };
 
   const createAjo = async () => {
-    if (!user) return
+    if (!user) return;
 
-    await supabase.from('ajos').insert({
+    await supabase.from("ajos").insert({
       name: newAjoName,
       created_by: user.id,
       cycle_amount: cycleAmount,
       current_cycle: 1,
-    })
+    });
 
-    setNewAjoName('')
-    setCycleAmount(0)
-    refreshAjos()
-  }
+    setNewAjoName("");
+    setCycleAmount(0);
+    refreshAjos();
+  };
 
   const joinAjo = async (ajoId: string) => {
-    if (!user) return
+    if (!user) return;
 
-    await supabase.from('ajo_members').insert({
+    await supabase.from("ajo_members").insert({
       ajo_id: ajoId,
       user_id: user.id,
-    })
+    });
 
-    alert('Joined Ajo successfully!')
-  }
+    alert("Joined Ajo successfully!");
+  };
 
   const contribute = async (ajoId: string) => {
-    if (!user) return
+    if (!user) return;
 
-    const ajo = ajos.find((a) => a.id === ajoId)
-    if (!ajo) return
+    const ajo = ajos.find((a) => a.id === ajoId);
+    if (!ajo) return;
 
-    await supabase.from('ajo_contributions').insert({
+    await supabase.from("ajo_contributions").insert({
       ajo_id: ajoId,
       user_id: user.id,
       cycle_number: ajo.current_cycle,
       amount: ajo.cycle_amount,
-    })
+    });
 
-    alert('Contribution successful!')
-  }
+    alert("Contribution successful!");
+  };
 
   if (loading) {
-    return <div className="p-4">Loading...</div>
+    return <div className="p-4">Loading...</div>;
   }
 
   return (
@@ -122,12 +122,10 @@ export default function AjoPage() {
             <Button className="mr-2" onClick={() => joinAjo(ajo.id)}>
               Join
             </Button>
-            <Button onClick={() => contribute(ajo.id)}>
-              Contribute
-            </Button>
+            <Button onClick={() => contribute(ajo.id)}>Contribute</Button>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
