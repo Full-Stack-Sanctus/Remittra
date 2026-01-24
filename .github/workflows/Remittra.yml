@@ -55,7 +55,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: npx ts-node scripts/seed.ts
+        run: npx ts-node --loader ts-node/esm scripts/seed.ts
 
       # 8️⃣ Build Next.js app
       - name: Build
