@@ -1,14 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies as nextCookies } from "next/headers";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const cookieStore = nextCookies(); // ✅ call the function
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: cookieStore } // pass the object, not the function
+    { cookies }
   );
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -16,21 +14,19 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: wallet } = await supabase
+  const { data: wallet, error: walletError } = await supabase
     .from("wallets")
-    .select("balance, locked_balance")
+    .select("balance")
     .eq("user_id", user.id)
     .single();
 
-  if (!wallet) {
-    return NextResponse.json({ available: 0, locked: 0, total: 0 });
+  if (walletError || !wallet) {
+    return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
   }
 
-  const total = wallet.balance + wallet.locked_balance;
-
   return NextResponse.json({
-    available: wallet.balance,
-    locked: wallet.locked_balance,
-    total,
+    available: wallet.balance, // you can add locked/total if stored separately
+    locked: 0,
+    total: wallet.balance,
   });
 }

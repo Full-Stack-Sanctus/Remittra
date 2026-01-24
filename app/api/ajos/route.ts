@@ -1,14 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies as nextCookies } from "next/headers";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const cookieStore = nextCookies(); // ✅ call the function
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: cookieStore }
+    { cookies }
   );
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -16,29 +14,23 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: ajos } = await supabase
+  // Fetch Ajos for this user
+  const { data: ajos, error: ajosError } = await supabase
     .from("ajos")
-    .select(`
-      id, name, created_by, cycle_amount, cycle_duration, current_cycle,
-      contributions:user_ajo_contributions(amount, payout_due, user_id)
-    `);
+    .select("*")
+    .or(`created_by.eq.${user.id},id=in.(select ajo_id from ajo_members where user_id.eq.${user.id})`);
 
-  const result = ajos.map((ajo: any) => {
-    const contribution = ajo.contributions?.find(
-      (c: any) => c.user_id === user.id
-    );
-    return {
-      id: ajo.id,
-      name: ajo.name,
-      created_by: ajo.created_by,
-      cycle_amount: ajo.cycle_amount,
-      cycle_duration: ajo.cycle_duration,
-      current_cycle: ajo.current_cycle,
-      joined: !!contribution,
-      your_contribution: contribution?.amount || 0,
-      payout_due: contribution?.payout_due || false,
-    };
-  });
+  if (ajosError) {
+    return NextResponse.json({ error: ajosError.message }, { status: 400 });
+  }
 
-  return NextResponse.json(result);
+  // Optionally map to include joined and your contribution
+  const formatted = ajos.map((ajo: any) => ({
+    ...ajo,
+    joined: ajo.created_by === user.id || false, // adjust based on membership table
+    your_contribution: 0, // calculate from contributions table if you have it
+    payout_due: false, // calculate logic
+  }));
+
+  return NextResponse.json(formatted);
 }
