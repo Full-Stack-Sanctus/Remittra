@@ -48,23 +48,28 @@ async function getOrCreateAuthUser(
     email_confirm: true,
   });
 
+  // Created successfully
   if (data?.user?.id) {
     return data.user.id;
   }
 
-  // User already exists → fetch ID from auth.users mirror
-  const { data: existingUser, error: fetchError } = await supabase
-    .from("users")
-    .select("id")
-    .eq("email", email)
-    .single();
+  // User already exists → fetch from auth.users
+  const { data: users, error: listError } =
+    await supabase.auth.admin.listUsers();
 
-  if (fetchError || !existingUser) {
-    throw fetchError ?? new Error(`Failed to resolve user ID for ${email}`);
+  if (listError || !users) {
+    throw listError ?? new Error("Failed to list auth users");
+  }
+
+  const existingUser = users.users.find((u) => u.email === email);
+
+  if (!existingUser) {
+    throw new Error(`Auth user not found for ${email}`);
   }
 
   return existingUser.id;
 }
+
 
 /* ----------------------------- Seeder ----------------------------- */
 
