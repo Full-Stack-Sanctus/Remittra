@@ -79,7 +79,7 @@ export default function AjoSection() {
   }, [user]);
 
   if (loading) return <div className="p-4">Loading...</div>;
-  if (!user) return <div className="p-4">Please sign in</div>;
+  if (!user) return;
 
   const refreshAjos = async () => {
     const data = await fetch("/api/ajos").then((r) => r.json());
