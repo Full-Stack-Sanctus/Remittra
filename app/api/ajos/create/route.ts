@@ -15,7 +15,7 @@ export async function POST(req: Request) {
           return cookieStore.get(name)?.value;
         },
       },
-    }
+    },
   );
 
   const {

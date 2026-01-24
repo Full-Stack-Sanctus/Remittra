@@ -35,7 +35,6 @@ export default function UserPage() {
   const [newAjoName, setNewAjoName] = useState<string>("");
   const [cycleAmount, setCycleAmount] = useState<string>("");
   const [cycleDuration, setCycleDuration] = useState<string>("1");
-  
 
   // Helper to sanitize number input: digits only, no leading zeros
   const formatInput = (value: string) =>
@@ -71,7 +70,7 @@ export default function UserPage() {
         } else {
           fetchData();
         }
-      }
+      },
     );
 
     return () => {
@@ -138,7 +137,8 @@ export default function UserPage() {
     const res = await fetch("/api/ajos/create", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"},
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         name: newAjoName,
         createdBy: user.id,
@@ -161,7 +161,7 @@ export default function UserPage() {
     const res = await fetch("/api/ajos/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId, userId: user.id}),
+      body: JSON.stringify({ ajoId, userId: user.id }),
     });
     const data = await res.json();
     if (!res.ok) return alert(data.error || "Failed to join Ajo");
@@ -206,7 +206,9 @@ export default function UserPage() {
     const data = await res.json();
     if (!res.ok) return alert(data.error || "Failed to generate invite");
 
-    alert(`Invite Link (expires ${new Date(data.expiresAt).toLocaleString()}):\n${data.inviteLink}`);
+    alert(
+      `Invite Link (expires ${new Date(data.expiresAt).toLocaleString()}):\n${data.inviteLink}`,
+    );
   };
 
   return (
@@ -280,7 +282,9 @@ export default function UserPage() {
               <Button onClick={() => generateInvite(ajo.id)}>Invite</Button>
             )}
             {!ajo.joined && ajo.created_by !== user.id && (
-              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>Join</Button>
+              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>
+                Join
+              </Button>
             )}
             {ajo.joined && (
               <Button
