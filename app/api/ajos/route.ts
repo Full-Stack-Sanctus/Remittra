@@ -1,13 +1,14 @@
-// app/api/ajos/route.ts
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies as nextCookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const cookieStore = nextCookies(); // ✅ call the function
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies }
+    { cookies: cookieStore }
   );
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -15,19 +16,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch all ajos with user's participation info
-  const { data: ajos, error: ajosError } = await supabase
+  const { data: ajos } = await supabase
     .from("ajos")
     .select(`
       id, name, created_by, cycle_amount, cycle_duration, current_cycle,
-      contributions:user_ajo_contributions(amount, payout_due)
+      contributions:user_ajo_contributions(amount, payout_due, user_id)
     `);
 
-  if (ajosError) {
-    return NextResponse.json({ error: ajosError.message }, { status: 400 });
-  }
-
-  // Map user's contribution to each ajo
   const result = ajos.map((ajo: any) => {
     const contribution = ajo.contributions?.find(
       (c: any) => c.user_id === user.id
