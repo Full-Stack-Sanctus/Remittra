@@ -1,23 +1,25 @@
-import { getSupabaseServer } from '../lib/supabaseServer';
+import { getSupabaseServer } from "../lib/supabaseServer";
 
 const supabaseServer = getSupabaseServer(); // ← call the function to get the client
 
 async function seed() {
   // Create admin user
-  const { data: adminData, error: adminError } = await supabaseServer.auth.admin.createUser({
-    email: "admin@demo.com",
-    password: "Admin123!",
-    email_confirm: true,
-  });
+  const { data: adminData, error: adminError } =
+    await supabaseServer.auth.admin.createUser({
+      email: "admin@demo.com",
+      password: "Admin123!",
+      email_confirm: true,
+    });
 
   if (adminError) throw adminError;
 
   // Create regular test user
-  const { data: userData, error: userError } = await supabaseServer.auth.admin.createUser({
-    email: "user@demo.com",
-    password: "User123!",
-    email_confirm: true,
-  });
+  const { data: userData, error: userError } =
+    await supabaseServer.auth.admin.createUser({
+      email: "user@demo.com",
+      password: "User123!",
+      email_confirm: true,
+    });
 
   if (userError) throw userError;
 
@@ -38,7 +40,7 @@ async function seed() {
       wallet_balance: 5000,
     },
   ]);
-  
+
   /*
   
   await supabase.from("ajos").insert([
