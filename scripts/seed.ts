@@ -38,7 +38,10 @@ type UserAjoInsert = {
 
 /* ----------------------------- Helpers ----------------------------- */
 
-async function getOrCreateAuthUser(email: string, password: string): Promise<string> {
+async function getOrCreateAuthUser(
+  email: string,
+  password: string,
+): Promise<string> {
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password,
