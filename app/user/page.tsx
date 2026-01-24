@@ -168,7 +168,7 @@ export default function UserPage() {
     const res = await fetch("/api/ajos/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId, userId: user id}),
+      body: JSON.stringify({ ajoId, userId: user.id}),
     });
     const data = await res.json();
     if (!res.ok) return alert(data.error || "Failed to join Ajo");
