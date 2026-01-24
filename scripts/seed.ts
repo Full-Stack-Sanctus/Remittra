@@ -70,7 +70,6 @@ async function getOrCreateAuthUser(
   return existingUser.id;
 }
 
-
 /* ----------------------------- Seeder ----------------------------- */
 
 async function seed(): Promise<void> {
