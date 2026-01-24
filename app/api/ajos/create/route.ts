@@ -1,55 +1,34 @@
-import { getSupabaseServer } from "@/lib/supabaseServer";
-import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const supabaseServer = getSupabaseServer();
+export async function POST(req: Request) {
+  const supabase = createRouteHandlerClient({ cookies });
 
-    // Verify session and get user
-    const { data: { user }, error: userError } = await supabaseServer.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-    // Parse body
-    const { name, cycleAmount, cycleDuration } = await req.json();
-    if (!name || !cycleAmount || !cycleDuration) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
-    // Insert Ajo
-    const { data: ajoData, error: ajoError } = await supabaseServer
-      .from("ajos")
-      .insert({
-        name,
-        created_by: user.id,
-        cycle_amount: cycleAmount,
-        cycle_duration: cycleDuration,
-        current_cycle: 1,
-      })
-      .select()
-      .single();
-
-    if (ajoError || !ajoData) {
-      return NextResponse.json({ error: ajoError?.message || "Failed to create Ajo" }, { status: 400 });
-    }
-
-    // Insert creator as head in user_ajos
-    const { error: userAjoError } = await supabaseServer.from("user_ajos").insert({
-      user_id: user.id,
-      ajo_id: ajoData.id,
-      your_contribution: 0,
-      payout_due: false,
-      is_head: true,
-    });
-
-    if (userAjoError) {
-      return NextResponse.json({ error: userAjoError.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ ok: true, ajo: ajoData });
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  if (!user || error) {
+    console.log("AUTH ERROR", error);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { name, cycleAmount, cycleDuration } = await req.json();
+
+  const { data, error: insertError } = await supabase
+    .from("ajos")
+    .insert({
+      name,
+      created_by: user.id,
+      cycle_amount: cycleAmount,
+      cycle_duration: cycleDuration,
+      current_cycle: 1,
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    return NextResponse.json({ error: insertError.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true, ajo: data });
 }
