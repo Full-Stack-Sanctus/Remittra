@@ -32,25 +32,28 @@ async function seed() {
       } else throw userError;
     }
 
-    // Use existing user IDs if already created
-    const adminId = adminData?.user?.id ?? (
-      await supabaseServer
-        .from("users")
-        .select("id")
-        .eq("email", "admin@demo.com")
-        .single()
-    ).data.id;
+    // ----- GET OR FALLBACK TO EXISTING USER IDS -----
+    const adminId =
+      adminData?.user?.id ??
+      (
+        await supabaseServer
+          .from("users")
+          .select("id")
+          .eq("email", "admin@demo.com")
+          .single()
+      ).data.id;
 
-    const userId = userData?.user?.id ?? (
-      await supabaseServer
-        .from("users")
-        .select("id")
-        .eq("email", "user@demo.com")
-        .single()
-    ).data.id;
+    const userId =
+      userData?.user?.id ??
+      (
+        await supabaseServer
+          .from("users")
+          .select("id")
+          .eq("email", "user@demo.com")
+          .single()
+      ).data.id;
 
-<<<<<<< HEAD
-    // ----- INSERT INTO USERS TABLE -----
+    // ----- UPSERT INTO USERS TABLE -----
     await supabaseServer.from("users").upsert([
       {
         id: adminId,
@@ -67,37 +70,23 @@ async function seed() {
         wallet_balance: 5000,
       },
     ]);
-=======
-  await supabaseServer.from("ajos").insert([
-    {
-      name: "Team Ajo",
-      created_by: adminData.user!.id,
-      cycle_amount: 1000,
-      current_cycle: 1,
-    },
-    {
-      name: "Weekend Ajo",
-      created_by: adminData.user!.id,
-      cycle_amount: 500,
-      current_cycle: 2,
-    },
-  ]);
->>>>>>> origin/main
 
-    // ----- INSERT INTO WALLETS -----
+    // ----- UPSERT INTO WALLETS TABLE -----
     await supabaseServer.from("wallets").upsert([
       { user_id: adminId, balance: 100000 },
       { user_id: userId, balance: 5000 },
     ]);
 
-    // ----- INSERT AJOS -----
-    const { data: ajosData } = await supabaseServer.from("ajos").upsert([
-      { name: "Team Ajo", created_by: adminId, cycle_amount: 1000, current_cycle: 1 },
-      { name: "Weekend Ajo", created_by: adminId, cycle_amount: 500, current_cycle: 2 },
-    ]).select("*");
+    // ----- UPSERT INTO AJOS TABLE -----
+    const { data: ajosData } = await supabaseServer
+      .from("ajos")
+      .upsert([
+        { name: "Team Ajo", created_by: adminId, cycle_amount: 1000, current_cycle: 1 },
+        { name: "Weekend Ajo", created_by: adminId, cycle_amount: 500, current_cycle: 2 },
+      ])
+      .select("*");
 
-    // Optional: populate user_ajos table if you want initial contributions
-    // Example: let user join "Team Ajo" automatically
+    // ----- OPTIONAL: INITIAL USER_AJOS -----
     const teamAjoId = ajosData?.find((a: any) => a.name === "Team Ajo")?.id;
     if (teamAjoId) {
       await supabaseServer.from("user_ajos").upsert([
