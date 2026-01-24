@@ -48,14 +48,16 @@ export default function AdminPage() {
     fetchData();
 
     // Listen for auth changes
-    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        setUsers([]);
-        setAjos([]);
-      } else {
-        fetchData();
-      }
-    });
+    const { data: listener } = supabaseClient.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!session?.user) {
+          setUsers([]);
+          setAjos([]);
+        } else {
+          fetchData();
+        }
+      },
+    );
 
     return () => {
       mounted = false;

@@ -47,8 +47,18 @@ async function seed() {
   ]);
 
   await supabaseServer.from("ajos").insert([
-    { name: "Team Ajo", created_by: adminData.user!.id, cycle_amount: 1000, current_cycle: 1 },
-    { name: "Weekend Ajo", created_by: adminData.user!.id, cycle_amount: 500, current_cycle: 2 },
+    {
+      name: "Team Ajo",
+      created_by: adminData.user!.id,
+      cycle_amount: 1000,
+      current_cycle: 1,
+    },
+    {
+      name: "Weekend Ajo",
+      created_by: adminData.user!.id,
+      cycle_amount: 500,
+      current_cycle: 2,
+    },
   ]);
 
   console.log("Seeding complete");

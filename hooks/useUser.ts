@@ -17,7 +17,8 @@ export function useUser() {
     const fetchUser = async () => {
       try {
         // Get session
-        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        const { data: sessionData, error: sessionError } =
+          await supabaseClient.auth.getSession();
         if (sessionError) throw sessionError;
         if (!sessionData?.session) {
           if (mounted) setUser(null);
@@ -25,7 +26,8 @@ export function useUser() {
         }
 
         // Get current user
-        const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+        const { data: userData, error: userError } =
+          await supabaseClient.auth.getUser();
         if (userError) throw userError;
         if (!userData?.user) return;
 
@@ -56,10 +58,12 @@ export function useUser() {
     fetchUser();
 
     // Subscribe to auth state changes (login/logout)
-    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) setUser(null);
-      else fetchUser();
-    });
+    const { data: listener } = supabaseClient.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!session?.user) setUser(null);
+        else fetchUser();
+      },
+    );
 
     return () => {
       mounted = false;
