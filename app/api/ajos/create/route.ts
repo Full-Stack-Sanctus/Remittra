@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const { error } = await supabase.from("ajos").insert({
+  const { error } = await supabaseServer.from("ajos").insert({
     name,
     created_by: createdBy,
     cycle_amount: cycleAmount,

@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   if (!ajoId || !userId)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from("ajo_members")
     .insert({ ajo_id: ajoId, user_id: userId });
 

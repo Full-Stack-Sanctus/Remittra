@@ -1,9 +1,9 @@
-import { supabase } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const { userId, verified } = await req.json();
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from("users")
     .update({ kyc_verified: !verified })
     .eq("id", userId);

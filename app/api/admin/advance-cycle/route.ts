@@ -1,9 +1,9 @@
-import { supabase } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const { ajoId } = await req.json();
-  const { data: ajo } = await supabase
+  const { data: ajo } = await supabaseServer
     .from("ajos")
     .select("*")
     .eq("id", ajoId)
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!ajo)
     return NextResponse.json({ error: "Ajo not found" }, { status: 404 });
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from("ajos")
     .update({ current_cycle: ajo.current_cycle + 1 })
     .eq("id", ajoId);

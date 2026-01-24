@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabaseServer";
+import { supabaseClient } from "../lib/supabaseClient";
 
 export type User = {
   id: string;
@@ -13,7 +13,7 @@ export function useUser() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
+      const { data, error } = await supabaseClient.auth.getUser();
       if (data?.user) {
         setUser({
           id: data.user.id,

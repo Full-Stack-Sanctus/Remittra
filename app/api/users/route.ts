@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const { data } = await supabase
+  const { data } = await supabaseServer
     .from("users")
     .select("id, email, kyc_verified");
   return NextResponse.json(data || []);

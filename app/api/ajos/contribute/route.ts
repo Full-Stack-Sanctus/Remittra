@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   if (!ajoId || !userId)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-  const { data: ajo } = await supabase
+  const { data: ajo } = await supabaseServer
     .from("ajos")
     .select("*")
     .eq("id", ajoId)
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (!ajo)
     return NextResponse.json({ error: "Ajo not found" }, { status: 404 });
 
-  const { error } = await supabase.from("ajo_contributions").insert({
+  const { error } = await supabaseServer.from("ajo_contributions").insert({
     ajo_id: ajoId,
     user_id: userId,
     cycle_number: ajo.current_cycle,
