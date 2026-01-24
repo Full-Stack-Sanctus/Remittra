@@ -55,21 +55,11 @@ export function useUser() {
 
     fetchUser();
 
-<<<<<<< HEAD
     // Subscribe to auth state changes (login/logout)
     const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       if (!session?.user) setUser(null);
       else fetchUser();
     });
-=======
-    // Optional: subscribe to auth changes (login/logout)
-    const { data: authListener } = supabaseClient.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session?.user) setUser(null);
-        else fetchUser();
-      },
-    );
->>>>>>> origin/main
 
     return () => {
       mounted = false;
