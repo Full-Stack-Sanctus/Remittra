@@ -5,33 +5,33 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
+    // Create Supabase server-side client
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { cookies: cookies() as any }
     );
 
-    // 1️⃣ Get authenticated user
+    // Get authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (!user || userError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2️⃣ Check if user is admin in `users` table
-    const { data: userData, error: userDataError } = await supabase
+    // Check if user is admin (assumes `users` table has `is_admin` column)
+    const { data: userData, error: userFetchError } = await supabase
       .from("users")
       .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    if (userDataError) {
-      console.error("Error fetching user data:", userDataError);
-      return NextResponse.json({ error: "Failed to fetch user data" }, { status: 400 });
+    if (userFetchError || !userData) {
+      return NextResponse.json({ error: "Unable to fetch user role" }, { status: 400 });
     }
 
-    const isAdmin = userData?.is_admin ?? false;
+    const isAdmin = userData.is_admin === true;
 
-    // 3️⃣ Fetch Ajos and contributions
+    // Fetch all ajos with contributions (LEFT JOIN)
     const { data: ajosData, error: ajosError } = await supabase
       .from("ajos")
       .select(`
@@ -41,7 +41,7 @@ export async function GET() {
         cycle_amount,
         cycle_duration,
         current_cycle,
-        contributions:user_ajos!inner(
+        contributions:user_ajos(
           user_id,
           amount,
           payout_due
@@ -55,9 +55,10 @@ export async function GET() {
 
     if (!Array.isArray(ajosData)) return NextResponse.json([], { status: 200 });
 
-    // 4️⃣ Map contributions
+    // Map ajos for user/admin
     const ajos = ajosData.map((ajo: any) => {
-      const userContribution = ajo.contributions.find(
+      // Find current user's contribution (for normal users)
+      const userContribution = ajo.contributions?.find(
         (c: any) => c.user_id === user.id
       );
 
@@ -71,13 +72,13 @@ export async function GET() {
         joined: !!userContribution,
         your_contribution: userContribution?.amount ?? 0,
         payout_due: userContribution?.payout_due ?? false,
-        contributions: isAdmin ? ajo.contributions : undefined,
+        contributions: isAdmin ? ajo.contributions : undefined, // admin sees all contributions
       };
     });
 
     return NextResponse.json(ajos, { status: 200 });
   } catch (err: any) {
     console.error("GET /api/ajos unexpected error:", err);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json([], { status: 200 }); // always return array
   }
 }
