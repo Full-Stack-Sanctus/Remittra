@@ -136,7 +136,7 @@ export default function UserPage() {
       return alert("Enter valid details");
     
     // ✅ Get session properly
-     lconst { data: sessionData } = await supabaseClient.auth.getSession(); // await!
+    const { data: sessionData } = await supabaseClient.auth.getSession(); // await!
     const token = sessionData?.session?.access_token;
     if (!token) return alert("Session expired. Please login again.");
   
