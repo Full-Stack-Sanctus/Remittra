@@ -51,7 +51,9 @@ export default function UserPage() {
 
      const ajosRes = await fetch("/api/ajos");
      const ajosData = await ajosRes.json();
-
+     
+     if (!mounted) return;
+     
      setWallet(
       walletData && typeof walletData === "object"
         ? walletData
