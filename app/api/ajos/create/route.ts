@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const cookieStore = cookies();
+  // ✅ cookies() is async in route handlers
+  const cookieStore = await cookies();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
