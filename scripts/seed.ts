@@ -4,7 +4,7 @@ import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 
 const supabase = getSupabaseServer();
 
-/* ----------------------------- Types ----------------------------- */
+/* ----------------------------- Types ------------------------------ */
 
 type AppUserInsert = {
   id: string;
@@ -64,7 +64,9 @@ async function getOrCreateAuthUser(
 
   const users = listData.users as SupabaseAuthUser[];
 
-  const existingUser = users.find((user) => user.email === email);
+  const existingUser = users.find(
+    (user) => user.email === email,
+  );
 
   if (!existingUser) {
     throw new Error(`Auth user not found for ${email}`);
@@ -72,6 +74,7 @@ async function getOrCreateAuthUser(
 
   return existingUser.id;
 }
+
 
 /* ----------------------------- Seeder ----------------------------- */
 
