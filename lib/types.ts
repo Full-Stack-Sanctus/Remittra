@@ -12,7 +12,7 @@ export type UserRow = {
 export type WalletTransactionRow = {
   id: string;
   user_id: string;
-  type: 'deposit' | 'withdraw';
+  type: "deposit" | "withdraw";
   amount: number;
   created_at: string;
 };
