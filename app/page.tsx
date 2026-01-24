@@ -3,19 +3,41 @@
 import { useState } from "react";
 import { supabaseClient } from "../lib/supabaseClient";
 import Button from "../components/Button";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
-  const handleSignIn = async () => {
-    const { error } = await supabaseClient.auth.signInWithPassword({
+  const handleSignIn = async (email: string, password: string) => {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
       alert(error.message);
+      return;
+    }
+
+    const { data: userData, error: userError } = await supabaseClient
+      .from("users")
+      .select("id, is_admin, kyc_verified")
+      .eq("id", data.user.id)
+      .single();
+
+    if (userError) {
+      alert(userError.message);
+      return;
+    }
+
+    if (userData.is_admin) {
+      router.push("/admin");
+    } else if (userData.kyc_verified) {
+      router.push("/user");
+    } else {
+      alert("Your account is not KYC-verified yet.");
     }
   };
 
@@ -38,7 +60,7 @@ export default function Login() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <Button onClick={handleSignIn}>Sign In</Button>
+      <Button onClick={() => handleSignIn(email, password)}>Sign In</Button>
     </div>
   );
 }
