@@ -10,92 +10,18 @@ export async function GET() {
       { cookies: cookies() as any }
     );
 
-    // Get logged-in user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (!user || userError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: userData, error: userDataError } = await supabase
-      .from("users")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single();
-
-    if (userDataError) {
-      console.error("User data fetch error:", userDataError);
-      return NextResponse.json({ error: "Could not fetch user data" }, { status: 400 });
-    }
-
-    const isAdmin = userData?.is_admin ?? false;
-
-    // Fetch all Ajo groups
-    const { data: ajosData, error: ajosError } = await supabase
+    // Fetch all Ajo groups (basic)
+    const { data, error } = await supabase
       .from("ajos")
-      .select(`
-        id,
-        name,
-        created_by,
-        cycle_amount,
-        cycle_duration,
-        current_cycle,
-        user_ajos:user_ajos(
-          user_id,
-          amount,
-          payout_due
-        )
-      `)
+      .select("*")
       .order("name", { ascending: true });
 
-    if (ajosError) {
-      console.error("Ajos fetch error:", ajosError);
-      return NextResponse.json({ error: ajosError.message }, { status: 400 });
-    }
+    console.log("AJOS RAW DATA:", data);
+    if (error) console.error("AJOS FETCH ERROR:", error);
 
-    if (!Array.isArray(ajosData)) {
-      return NextResponse.json([], { status: 200 });
-    }
-
-    // Map contributions properly
-    const ajos = ajosData.map((ajo: any) => {
-      const contributions = Array.isArray(ajo.user_ajos) ? ajo.user_ajos : [];
-
-      if (isAdmin) {
-        // Admin sees all contributions
-        return {
-          id: ajo.id,
-          name: ajo.name,
-          current_cycle: ajo.current_cycle,
-          contributions,
-        };
-      } else {
-        // Normal users see only their contribution
-        const userContribution = contributions.find((c: any) => c.user_id === user.id);
-        return {
-          id: ajo.id,
-          name: ajo.name,
-          current_cycle: ajo.current_cycle,
-          joined: !!userContribution,
-          your_contribution: userContribution?.amount ?? 0,
-          payout_due: userContribution?.payout_due ?? false,
-        };
-      }
-    });
-    
-    console.log("User session:", user);
-    console.log("Is Admin:", isAdmin);
-    console.log("Ajos raw data:", ajosData);
-    console.log("Ajos fetch error:", ajosError);
-
-
-    return NextResponse.json(ajos, { status: 200 });
+    return NextResponse.json(data ?? [], { status: 200 });
   } catch (err: any) {
-    console.error("GET /api/ajos unexpected error:", err);
-    return NextResponse.json([], { status: 200 });
+    console.error("UNEXPECTED ERROR:", err);
+    return NextResponse.json([], { status: 500 });
   }
 }
