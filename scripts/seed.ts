@@ -1,71 +1,78 @@
 // scripts/seed.ts
 import { getSupabaseServer } from "../lib/supabaseServer";
-import type { AuthError } from "@supabase/supabase-js";
 
-const supabaseServer = getSupabaseServer(); // uses service_role key
+const supabase = getSupabaseServer();
 
-type AjoRow = {
+/* ----------------------------- Types ----------------------------- */
+
+type AppUserInsert = {
   id: string;
+  email: string;
+  is_admin: boolean;
+  kyc_verified: boolean;
+  wallet_balance: number;
+};
+
+type WalletInsert = {
+  user_id: string;
+  balance: number;
+};
+
+type AjoInsert = {
   name: string;
   created_by: string;
   cycle_amount: number;
   current_cycle: number;
 };
 
-async function createUserIfNotExists(
-  email: string,
-  password: string
-): Promise<string> {
-  const { data, error } = await supabaseServer.auth.admin.createUser({
+type AjoRow = AjoInsert & {
+  id: string;
+};
+
+type UserAjoInsert = {
+  user_id: string;
+  ajo_id: string;
+  your_contribution: number;
+  payout_due: boolean;
+};
+
+/* ----------------------------- Helpers ----------------------------- */
+
+async function getOrCreateAuthUser(email: string, password: string): Promise<string> {
+  const { data, error } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
   });
 
-  if (error) {
-    const authError = error as AuthError;
-
-    if (authError.status === 400) {
-      // User already exists → fetch from users table
-      const { data: existingUser, error: fetchError } =
-        await supabaseServer
-          .from("users")
-          .select("id")
-          .eq("email", email)
-          .single();
-
-      if (fetchError || !existingUser) {
-        throw fetchError ?? new Error("User exists but not found in users table");
-      }
-
-      return existingUser.id;
-    }
-
-    throw error;
+  if (data?.user?.id) {
+    return data.user.id;
   }
 
-  if (!data.user) {
-    throw new Error("User creation failed without error");
+  // User already exists → fetch ID from auth.users mirror
+  const { data: existingUser, error: fetchError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", email)
+    .single();
+
+  if (fetchError || !existingUser) {
+    throw fetchError ?? new Error(`Failed to resolve user ID for ${email}`);
   }
 
-  return data.user.id;
+  return existingUser.id;
 }
+
+/* ----------------------------- Seeder ----------------------------- */
 
 async function seed(): Promise<void> {
   try {
-    // ----- CREATE USERS -----
-    const adminId = await createUserIfNotExists(
-      "admin@demo.com",
-      "Admin123!"
-    );
+    // ---- AUTH USERS ----
+    const adminId = await getOrCreateAuthUser("admin@demo.com", "Admin123!");
+    const userId = await getOrCreateAuthUser("user@demo.com", "User123!");
 
-    const userId = await createUserIfNotExists(
-      "user@demo.com",
-      "User123!"
-    );
-
-    // ----- USERS TABLE -----
-    await supabaseServer.from("users").upsert([
+    // ---- APP USERS ----
+    const users: AppUserInsert[] = [
       {
         id: adminId,
         email: "admin@demo.com",
@@ -80,56 +87,68 @@ async function seed(): Promise<void> {
         kyc_verified: true,
         wallet_balance: 5000,
       },
-    ]);
+    ];
 
-    // ----- WALLETS -----
-    await supabaseServer.from("wallets").upsert([
+    await supabase.from("users").upsert(users);
+
+    // ---- WALLETS ----
+    const wallets: WalletInsert[] = [
       { user_id: adminId, balance: 100000 },
       { user_id: userId, balance: 5000 },
-    ]);
+    ];
 
-    // ----- AJOS -----
-    const { data: ajosData, error: ajosError } =
-      await supabaseServer
-        .from("ajos")
-        .upsert<AjoRow>([
-          {
-            name: "Team Ajo",
-            created_by: adminId,
-            cycle_amount: 1000,
-            current_cycle: 1,
-          },
-          {
-            name: "Weekend Ajo",
-            created_by: adminId,
-            cycle_amount: 500,
-            current_cycle: 2,
-          },
-        ])
-        .select();
+    await supabase.from("wallets").upsert(wallets, {
+      onConflict: "user_id",
+    });
 
-    if (ajosError) {
-      throw ajosError;
+    // ---- AJOS ----
+    const ajos: AjoInsert[] = [
+      {
+        name: "Team Ajo",
+        created_by: adminId,
+        cycle_amount: 1000,
+        current_cycle: 1,
+      },
+      {
+        name: "Weekend Ajo",
+        created_by: adminId,
+        cycle_amount: 500,
+        current_cycle: 2,
+      },
+    ];
+
+    const { data: ajoRows, error: ajoError } = await supabase
+      .from("ajos")
+      .upsert(ajos, { onConflict: "name" })
+      .select("id, name, created_by, cycle_amount, current_cycle");
+
+    if (ajoError || !ajoRows) {
+      throw ajoError ?? new Error("Failed to seed ajos");
     }
 
-    const teamAjo = ajosData?.find(
-      (ajo) => ajo.name === "Team Ajo"
-    );
+    const typedAjos = ajoRows as AjoRow[];
+
+    // ---- USER_AJOS ----
+    const teamAjo = typedAjos.find((ajo) => ajo.name === "Team Ajo");
 
     if (teamAjo) {
-      await supabaseServer.from("user_ajos").upsert([
+      const userAjos: UserAjoInsert[] = [
         {
           user_id: userId,
           ajo_id: teamAjo.id,
           your_contribution: 0,
           payout_due: false,
         },
-      ]);
+      ];
+
+      await supabase.from("user_ajos").upsert(userAjos, {
+        onConflict: "user_id,ajo_id",
+      });
     }
 
-    console.log("Seeding complete ✅");
+    console.log("✅ Seeding complete");
   } catch (error) {
-    console.error("Seeder error:", error);
+    console.error("❌ Seeder failed:", error);
     process.exit(1);
   }
 }
