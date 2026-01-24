@@ -1,4 +1,6 @@
-import { supabaseServer } from '@/lib/supabaseServer';
+import { getSupabaseServer } from '@/lib/supabaseServer';
+
+const supabaseServer = getSupabaseServer(); // ← call the function to get the client
 
 async function seed() {
   // Create admin user
