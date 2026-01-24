@@ -11,7 +11,7 @@ type UserRow = {
   kyc_verified: boolean;
 };
 
-// Ajo type (matches the new API)
+// Ajo type
 type Contribution = {
   user_id: string;
   amount: number;
@@ -33,15 +33,15 @@ export default function AdminPage() {
   const fetchData = async () => {
     try {
       const session = (await supabaseClient.auth.getSession()).data.session;
-      if (!session) return;
+      if (!session) return; // Not logged in
 
       const [usersRes, ajosRes] = await Promise.all([
         fetch("/api/users").then((r) => r.json()),
         fetch("/api/ajos").then((r) => r.json()),
       ]);
 
-      setUsers(usersRes ?? []);
-      setAjos(ajosRes ?? []);
+      setUsers(Array.isArray(usersRes) ? usersRes : []);
+      setAjos(Array.isArray(ajosRes) ? ajosRes : []);
       setLoading(false);
     } catch (err) {
       console.error("Error fetching admin data:", err);
@@ -115,22 +115,32 @@ export default function AdminPage() {
       <div>
         <h2 className="font-semibold mb-2">Ajo Groups</h2>
         {ajos.length === 0 && <p>No Ajo groups found</p>}
+
         {ajos.map((a) => (
           <div
             key={a.id}
             className="border p-2 mb-2 flex flex-col md:flex-row justify-between items-start md:items-center"
           >
-            <div>
-              <span>
+            <div className="flex flex-col">
+              <span className="font-medium">
                 {a.name} — Cycle {a.current_cycle}
               </span>
-              {/* Show contributions count for admins */}
-              {a.contributions && a.contributions.length > 0 && (
-                <p className="text-sm text-gray-500">
-                  Contributions: {a.contributions.length}
-                </p>
+
+              {/* Show contributions for admins */}
+              {a.contributions && a.contributions.length > 0 ? (
+                <ul className="mt-1 text-sm text-gray-700 space-y-1">
+                  {a.contributions.map((c) => (
+                    <li key={c.user_id}>
+                      User <span className="font-semibold">{c.user_id}</span>:{" "}
+                      ${c.amount} — {c.payout_due ? "Payout Due" : "Not Due"}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500 mt-1">No contributions yet</p>
               )}
             </div>
+
             <Button className="mt-2 md:mt-0" onClick={() => advanceCycle(a.id)}>
               Advance Cycle
             </Button>
