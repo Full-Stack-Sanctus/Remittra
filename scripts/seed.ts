@@ -1,5 +1,6 @@
 // scripts/seed.ts
 import { getSupabaseServer } from "../lib/supabaseServer";
+import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 
 const supabase = getSupabaseServer();
 
@@ -48,20 +49,24 @@ async function getOrCreateAuthUser(
     email_confirm: true,
   });
 
-  // Created successfully
+  // ✅ User created
   if (data?.user?.id) {
     return data.user.id;
   }
 
-  // User already exists → fetch from auth.users
-  const { data: users, error: listError } =
+  // ⚠️ User already exists → fetch from auth.users
+  const { data: listData, error: listError } =
     await supabase.auth.admin.listUsers();
 
-  if (listError || !users) {
+  if (listError || !listData) {
     throw listError ?? new Error("Failed to list auth users");
   }
 
-  const existingUser = users.users.find((u) => u.email === email);
+  const users = listData.users as SupabaseAuthUser[];
+
+  const existingUser = users.find(
+    (user) => user.email === email,
+  );
 
   if (!existingUser) {
     throw new Error(`Auth user not found for ${email}`);
@@ -69,6 +74,7 @@ async function getOrCreateAuthUser(
 
   return existingUser.id;
 }
+
 
 /* ----------------------------- Seeder ----------------------------- */
 
