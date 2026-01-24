@@ -36,7 +36,6 @@ export default function UserPage() {
   const [cycleAmount, setCycleAmount] = useState<string>("");
   const [cycleDuration, setCycleDuration] = useState<string>("1");
   
-  const session = supabaseClient.auth.getSession();
 
   // Helper to sanitize number input: digits only, no leading zeros
   const formatInput = (value: string) =>
@@ -135,13 +134,18 @@ export default function UserPage() {
     const dur = Number(cycleDuration);
     if (!newAjoName || amt <= 0 || dur <= 0)
       return alert("Enter valid details");
+    
+    // ✅ Get session properly
+     lconst { data: sessionData } = await supabaseClient.auth.getSession(); // await!
+    const token = sessionData?.session?.access_token;
+    if (!token) return alert("Session expired. Please login again.");
+  
 
     const res = await fetch("/api/ajos/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.data.session?.access_token}`
-      },
+        "Authorization": `Bearer ${token}`},
       body: JSON.stringify({
         name: newAjoName,
         createdBy: user.id,
