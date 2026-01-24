@@ -10,11 +10,11 @@ on:
 
 jobs:
   build:
-    name: Build, Lint, Prettier, and Deploy
+    name: Build, Lint, Prettier, Seed, and Deploy
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository with PAT for push access
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -50,11 +50,18 @@ jobs:
           git commit -m "chore: format code with Prettier [skip ci]" || echo "No changes to commit"
           git push origin HEAD:main
 
-      # 7️⃣ Build Next.js app
+      # 7️⃣ Run Supabase Seed
+      - name: Seed Supabase DB
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npx ts-node scripts/seed.ts
+
+      # 8️⃣ Build Next.js app
       - name: Build
         run: npm run build
 
-      # 8️⃣ Deploy to Vercel
+      # 9️⃣ Deploy to Vercel
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
