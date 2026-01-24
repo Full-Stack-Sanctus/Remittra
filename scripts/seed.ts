@@ -49,6 +49,7 @@ async function seed() {
         .single()
     ).data.id;
 
+<<<<<<< HEAD
     // ----- INSERT INTO USERS TABLE -----
     await supabaseServer.from("users").upsert([
       {
@@ -66,6 +67,22 @@ async function seed() {
         wallet_balance: 5000,
       },
     ]);
+=======
+  await supabaseServer.from("ajos").insert([
+    {
+      name: "Team Ajo",
+      created_by: adminData.user!.id,
+      cycle_amount: 1000,
+      current_cycle: 1,
+    },
+    {
+      name: "Weekend Ajo",
+      created_by: adminData.user!.id,
+      cycle_amount: 500,
+      current_cycle: 2,
+    },
+  ]);
+>>>>>>> origin/main
 
     // ----- INSERT INTO WALLETS -----
     await supabaseServer.from("wallets").upsert([
