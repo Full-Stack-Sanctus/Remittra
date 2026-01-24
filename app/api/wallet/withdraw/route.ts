@@ -31,10 +31,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
   }
 
+  // Check if wallet has enough balance
+  if (wallet.balance < amount) {
+    return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
+  }
+
   // Insert transaction
   const { error: txError } = await supabase
     .from("wallet_transactions")
-    .insert({ user_id: user.id, type: "deposit", amount });
+    .insert({ user_id: user.id, type: "withdrawal", amount });
 
   if (txError) {
     return NextResponse.json({ error: txError.message }, { status: 400 });
@@ -43,7 +48,7 @@ export async function POST(req: Request) {
   // Update wallet balance
   const { error: updateError, data: updatedWallet } = await supabase
     .from("wallets")
-    .update({ balance: wallet.balance + amount })
+    .update({ balance: wallet.balance - amount })
     .eq("id", wallet.id)
     .select()
     .single();

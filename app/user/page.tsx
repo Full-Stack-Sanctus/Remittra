@@ -41,43 +41,43 @@ export default function UserPage() {
     value.replace(/\D/g, "").replace(/^0+/, "");
 
   useEffect(() => {
-    if (!user) return;
-    let mounted = true;
+   if (!user) return;
+   let mounted = true;
 
-    const fetchData = async () => {
-      try {
-        const { data: sessionData } = await supabaseClient.auth.getSession();
-        if (!sessionData?.session) return;
+   const fetchData = async () => {
+    try {
+      const walletData = await fetch("/api/wallet").then((r) => r.json());
+      const ajosData = await fetch("/api/ajos").then((r) => r.json());
 
-        const walletData = await fetch("/api/wallet").then((r) => r.json());
-        const ajosData = await fetch("/api/ajos").then((r) => r.json());
+      if (!mounted) return;
 
-        if (!mounted) return;
-        setWallet(walletData ?? { available: 0, locked: 0, total: 0 });
-        setAjos(ajosData ?? []);
-      } catch (err) {
-        console.error("Error fetching wallet/ajos:", err);
+      setWallet(walletData ?? { available: 0, locked: 0, total: 0 });
+      setAjos(ajosData ?? []);
+    } catch (err) {
+      console.error("Error fetching wallet/ajos:", err);
+    }
+   };
+
+   fetchData();
+
+   const { data: listener } = supabaseClient.auth.onAuthStateChange(
+    (_event, session) => {
+      if (!session?.user) {
+        setWallet({ available: 0, locked: 0, total: 0 });
+        setAjos([]);
+      } else {
+        fetchData();
       }
-    };
+    }
+   );
 
-    fetchData();
-
-    const { data: listener } = supabaseClient.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session?.user) {
-          setWallet({ available: 0, locked: 0, total: 0 });
-          setAjos([]);
-        } else {
-          fetchData();
-        }
-      },
-    );
-
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
+   return () => {
+    mounted = false;
+    listener.subscription.unsubscribe();
+   };
   }, [user]);
+
+
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (!user) return <div className="p-4">Please sign in</div>;
@@ -90,7 +90,7 @@ export default function UserPage() {
     const res = await fetch("/api/wallet/deposit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, amount: amt }),
+      body: JSON.stringify({ amount: amt }),
     });
     if (!res.ok) return alert("Deposit failed");
 
@@ -110,7 +110,7 @@ export default function UserPage() {
     const res = await fetch("/api/wallet/withdraw", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, amount: amt }),
+      body: JSON.stringify({ amount: amt }),
     });
     if (!res.ok) return alert("Withdrawal failed");
 
@@ -161,7 +161,7 @@ export default function UserPage() {
     const res = await fetch("/api/ajos/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId, userId: user.id }),
+      body: JSON.stringify({ ajoId }),
     });
     const data = await res.json();
     if (!res.ok) return alert(data.error || "Failed to join Ajo");
@@ -182,7 +182,7 @@ export default function UserPage() {
     const res = await fetch("/api/ajos/contribute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId, userId: user.id }),
+      body: JSON.stringify({ ajoId }),
     });
     const data = await res.json();
     if (!res.ok) return alert(data.error || "Contribution failed");
@@ -200,7 +200,7 @@ export default function UserPage() {
     const res = await fetch("/api/ajos/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId, userId: user.id }),
+      body: JSON.stringify({ ajoId }),
     });
 
     const data = await res.json();
