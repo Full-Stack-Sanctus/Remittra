@@ -5,21 +5,20 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
+    // Create Supabase client with server-side cookies
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { cookies: cookies() as any }
     );
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
+    // Get the authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (!user || userError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Fetch Ajos with contributions by the logged-in user
     const { data: ajosData, error: ajosError } = await supabase
       .from("ajos")
       .select(`
@@ -42,14 +41,15 @@ export async function GET() {
     }
 
     if (!Array.isArray(ajosData)) {
-      console.error("ajosData is not an array:", ajosData);
       return NextResponse.json([], { status: 200 });
     }
 
+    // Map contributions to each Ajo for the current user
     const ajos = ajosData.map((ajo: any) => {
       const userContribution = ajo.contributions.find(
         (c: any) => c.user_id === user.id
       );
+
       return {
         id: ajo.id,
         name: ajo.name,
@@ -63,7 +63,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(ajos);
+    return NextResponse.json(ajos, { status: 200 });
   } catch (err: any) {
     console.error("GET /api/ajos unexpected error:", err);
     return NextResponse.json([], { status: 200 }); // always return array
