@@ -6,7 +6,9 @@ import { useUser } from "@/hooks/useUser";
 import Button from "@/components/Button";
 
 type Wallet = {
-  balance: number;
+  available: number;
+  locked: number;
+  total: number;
 };
 
 type AjoRow = {
@@ -14,6 +16,7 @@ type AjoRow = {
   name: string;
   created_by: string;
   cycle_amount: number;
+  cycle_duration: number; // new
   current_cycle: number;
   joined: boolean;
   your_contribution: number;
@@ -22,13 +25,14 @@ type AjoRow = {
 
 export default function UserPage() {
   const { user, loading } = useUser();
-  const [wallet, setWallet] = useState<Wallet>({ balance: 0 });
-  const [amount, setAmount] = useState(0);
+  const [wallet, setWallet] = useState<Wallet>({ available: 0, locked: 0, total: 0 });
+  const [amount, setAmount] = useState<number>(0);
   const [ajos, setAjos] = useState<AjoRow[]>([]);
-  const [newAjoName, setNewAjoName] = useState("");
-  const [cycleAmount, setCycleAmount] = useState(0);
+  const [newAjoName, setNewAjoName] = useState<string>("");
+  const [cycleAmount, setCycleAmount] = useState<number>(0);
+  const [cycleDuration, setCycleDuration] = useState<number>(1); // in months/weeks
 
-  // Fetch wallet and Ajo groups once user session exists
+  // Fetch wallet and Ajo groups
   useEffect(() => {
     if (!user) return;
 
@@ -36,17 +40,14 @@ export default function UserPage() {
 
     const fetchData = async () => {
       try {
-        // Verify session
         const { data: sessionData } = await supabaseClient.auth.getSession();
         if (!sessionData?.session) return;
 
-        // Wallet
         const walletData = await fetch("/api/wallet").then((r) => r.json());
-        // Ajo groups
         const ajosData = await fetch("/api/ajos").then((r) => r.json());
 
         if (!mounted) return;
-        setWallet(walletData ?? { balance: 0 });
+        setWallet(walletData ?? { available: 0, locked: 0, total: 0 });
         setAjos(ajosData ?? []);
       } catch (err) {
         console.error("Error fetching wallet/ajos:", err);
@@ -55,11 +56,10 @@ export default function UserPage() {
 
     fetchData();
 
-    // Subscribe to auth state changes (e.g., logout)
     const { data: listener } = supabaseClient.auth.onAuthStateChange(
       (_event, session) => {
         if (!session?.user) {
-          setWallet({ balance: 0 });
+          setWallet({ available: 0, locked: 0, total: 0 });
           setAjos([]);
         } else {
           fetchData();
@@ -80,27 +80,39 @@ export default function UserPage() {
   const deposit = async () => {
     if (amount <= 0) return alert("Enter a valid amount");
 
-    await fetch("/api/wallet/deposit", {
+    const res = await fetch("/api/wallet/deposit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id, amount }),
     });
 
-    setWallet((w) => ({ ...w, balance: w.balance + amount }));
+    if (!res.ok) return alert("Deposit failed");
+
+    setWallet((w) => ({
+      ...w,
+      available: w.available + amount,
+      total: w.total + amount,
+    }));
     setAmount(0);
   };
 
   const withdraw = async () => {
-    if (amount <= 0 || amount > wallet.balance)
-      return alert("Invalid withdrawal amount");
+    if (amount <= 0 || amount > wallet.available)
+      return alert("Cannot withdraw more than available balance");
 
-    await fetch("/api/wallet/withdraw", {
+    const res = await fetch("/api/wallet/withdraw", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id, amount }),
     });
 
-    setWallet((w) => ({ ...w, balance: w.balance - amount }));
+    if (!res.ok) return alert("Withdrawal failed");
+
+    setWallet((w) => ({
+      ...w,
+      available: w.available - amount,
+      total: w.total - amount,
+    }));
     setAmount(0);
   };
 
@@ -111,40 +123,72 @@ export default function UserPage() {
   };
 
   const createAjo = async () => {
-    if (!newAjoName || cycleAmount <= 0) return alert("Enter valid details");
+    if (!newAjoName || cycleAmount <= 0 || cycleDuration <= 0)
+      return alert("Enter valid details");
 
-    await fetch("/api/ajos/create", {
+    const res = await fetch("/api/ajos/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: newAjoName,
         createdBy: user.id,
         cycleAmount,
+        cycleDuration,
       }),
     });
 
+    if (!res.ok) return alert("Failed to create Ajo");
+
     setNewAjoName("");
     setCycleAmount(0);
+    setCycleDuration(1);
     await refreshAjos();
   };
 
-  const joinAjo = async (ajoId: string) => {
-    await fetch("/api/ajos/join", {
+  const joinAjo = async (ajoId: string, cycleAmount: number) => {
+    if (wallet.available < cycleAmount) {
+      return alert("Insufficient wallet balance to join this Ajo.");
+    }
+
+    const res = await fetch("/api/ajos/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ajoId, userId: user.id }),
     });
 
-    alert("Joined Ajo!");
+    const data = await res.json();
+    if (!res.ok) return alert(data.error || "Failed to join Ajo");
+
+    setWallet((w) => ({
+      ...w,
+      available: w.available - cycleAmount,
+      locked: (w.locked || 0) + cycleAmount,
+      total: w.total,
+    }));
+
+    alert("Joined Ajo! Your contribution is now locked.");
     await refreshAjos();
   };
 
-  const contribute = async (ajoId: string) => {
-    await fetch("/api/ajos/contribute", {
+  const contribute = async (ajoId: string, cycleAmount: number) => {
+    if (wallet.locked < cycleAmount) {
+      return alert("Insufficient locked funds to contribute");
+    }
+
+    const res = await fetch("/api/ajos/contribute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ajoId, userId: user.id }),
     });
+
+    const data = await res.json();
+    if (!res.ok) return alert(data.error || "Contribution failed");
+
+    setWallet((w) => ({
+      ...w,
+      locked: w.locked - cycleAmount,
+      total: w.total,
+    }));
 
     alert("Contribution successful!");
     await refreshAjos();
@@ -155,37 +199,60 @@ export default function UserPage() {
       {/* Wallet Section */}
       <h1 className="text-xl font-bold mb-4">My Wallet</h1>
       <div className="border p-4 mb-6">
-        <p>Balance: ₦{wallet.balance}</p>
-        <input
-          type="number"
-          className="border p-2 mr-2"
-          placeholder="Amount"
-          value={amount}
-          onChange={(e) => setAmount(Number(e.target.value))}
-        />
-        <Button onClick={deposit}>Deposit</Button>
-        <Button onClick={withdraw} className="ml-2">
-          Withdraw
-        </Button>
+        <p>Total Balance: ₦{wallet.total}</p>
+        <p>Available Balance: ₦{wallet.available}</p>
+        <p>Locked in Ajo: ₦{wallet.locked}</p>
+        <div className="flex items-center mt-2">
+          <input
+            type="number"
+            min={1}
+            step={100}
+            className="border p-2 mr-2 w-32"
+            placeholder="Amount"
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+          />
+          <Button onClick={deposit}>Deposit</Button>
+          <Button onClick={withdraw} className="ml-2">
+            Withdraw
+          </Button>
+        </div>
       </div>
 
       {/* Create New Ajo */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-2">Create New Ajo</h2>
-        <input
-          className="border p-2 mr-2"
-          placeholder="Ajo Name"
-          value={newAjoName}
-          onChange={(e) => setNewAjoName(e.target.value)}
-        />
-        <input
-          className="border p-2 mr-2"
-          type="number"
-          placeholder="Cycle Amount"
-          value={cycleAmount}
-          onChange={(e) => setCycleAmount(Number(e.target.value))}
-        />
-        <Button onClick={createAjo}>Create</Button>
+        <div className="flex flex-wrap items-center space-x-2 mb-2">
+          <input
+            type="text"
+            className="border p-2 w-40"
+            placeholder="Ajo Name"
+            value={newAjoName}
+            onChange={(e) => setNewAjoName(e.target.value)}
+          />
+          <input
+            type="number"
+            min={1}
+            step={100}
+            className="border p-2 w-32"
+            placeholder="Cycle Amount"
+            value={cycleAmount}
+            onChange={(e) => setCycleAmount(Number(e.target.value))}
+          />
+          <input
+            type="number"
+            min={1}
+            step={1}
+            className="border p-2 w-32"
+            placeholder="Cycle Duration"
+            value={cycleDuration}
+            onChange={(e) => setCycleDuration(Number(e.target.value))}
+          />
+          <Button onClick={createAjo}>Create</Button>
+        </div>
+        <p className="text-sm text-gray-500">
+          Duration is in number of cycles (weeks/months)
+        </p>
       </div>
 
       {/* Ajo List */}
@@ -198,16 +265,19 @@ export default function UserPage() {
           <div>
             <h3 className="font-semibold">{ajo.name}</h3>
             <p>Cycle Amount: ₦{ajo.cycle_amount}</p>
+            <p>Cycle Duration: {ajo.cycle_duration}</p>
             <p>Current Cycle: {ajo.current_cycle}</p>
-            {ajo.joined && <p>Your Contribution: {ajo.your_contribution}</p>}
+            {ajo.joined && <p>Your Contribution: ₦{ajo.your_contribution}</p>}
           </div>
           <div className="mt-2 md:mt-0 flex space-x-2">
             {!ajo.joined && (
-              <Button onClick={() => joinAjo(ajo.id)}>Join</Button>
+              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>
+                Join
+              </Button>
             )}
             {ajo.joined && (
               <Button
-                onClick={() => contribute(ajo.id)}
+                onClick={() => contribute(ajo.id, ajo.cycle_amount)}
                 disabled={ajo.payout_due}
               >
                 {ajo.payout_due ? "Payout Due" : "Contribute"}
