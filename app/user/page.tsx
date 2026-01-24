@@ -42,7 +42,9 @@ export default function UserPage() {
     };
 
     fetchData();
-    return () => { mounted = false };
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   if (loading) return <div className="p-4">Loading...</div>;
@@ -83,7 +85,11 @@ export default function UserPage() {
     await fetch("/api/ajos/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newAjoName, createdBy: user.id, cycleAmount }),
+      body: JSON.stringify({
+        name: newAjoName,
+        createdBy: user.id,
+        cycleAmount,
+      }),
     });
 
     setNewAjoName("");
@@ -132,7 +138,9 @@ export default function UserPage() {
           onChange={(e) => setAmount(Number(e.target.value))}
         />
         <Button onClick={deposit}>Deposit</Button>
-        <Button onClick={withdraw} className="ml-2">Withdraw</Button>
+        <Button onClick={withdraw} className="ml-2">
+          Withdraw
+        </Button>
       </div>
 
       {/* Create New Ajo */}
@@ -157,7 +165,10 @@ export default function UserPage() {
       {/* Ajo List */}
       <h2 className="text-xl font-bold mb-2">Ajo Groups</h2>
       {ajos.map((ajo) => (
-        <div key={ajo.id} className="border p-4 mb-2 rounded flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div
+          key={ajo.id}
+          className="border p-4 mb-2 rounded flex flex-col md:flex-row justify-between items-start md:items-center"
+        >
           <div>
             <h3 className="font-semibold">{ajo.name}</h3>
             <p>Cycle Amount: ₦{ajo.cycle_amount}</p>
@@ -165,10 +176,17 @@ export default function UserPage() {
             {ajo.joined && <p>Your Contribution: {ajo.your_contribution}</p>}
           </div>
           <div className="mt-2 md:mt-0 flex space-x-2">
-            {!ajo.joined && <Button onClick={() => joinAjo(ajo.id)}>Join</Button>}
-            {ajo.joined && <Button onClick={() => contribute(ajo.id)} disabled={ajo.payout_due}>
-              {ajo.payout_due ? "Payout Due" : "Contribute"}
-            </Button>}
+            {!ajo.joined && (
+              <Button onClick={() => joinAjo(ajo.id)}>Join</Button>
+            )}
+            {ajo.joined && (
+              <Button
+                onClick={() => contribute(ajo.id)}
+                disabled={ajo.payout_due}
+              >
+                {ajo.payout_due ? "Payout Due" : "Contribute"}
+              </Button>
+            )}
           </div>
         </div>
       ))}

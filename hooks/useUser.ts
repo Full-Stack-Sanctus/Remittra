@@ -56,7 +56,7 @@ export function useUser() {
       (_event, session) => {
         if (!session?.user) setUser(null);
         else fetchUser();
-      }
+      },
     );
 
     return () => {
