@@ -4,28 +4,34 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const supabaseServer = getSupabaseServer();
-    
-    // Get session and user
-    const { data: { session } } = await supabaseServer.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Auth session missing" }, { status: 401 });
+
+    // Get Bearer token from request headers
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Missing authorization token" }, { status: 401 });
     }
-    const userId = session.user.id;
+    const token = authHeader.split(" ")[1];
 
+    // Verify session and get user
+    const { data: { user }, error: userError } = await supabaseServer.auth.getUser(token);
+    if (userError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Parse body
     const { name, cycleAmount, cycleDuration } = await req.json();
-
     if (!name || !cycleAmount || !cycleDuration) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // Insert into ajos table
+    // Insert Ajo
     const { data: ajoData, error: ajoError } = await supabaseServer
       .from("ajos")
       .insert({
         name,
-        created_by: userId,
-        cycle_amount: Number(cycleAmount),
-        cycle_duration: Number(cycleDuration),
+        created_by: user.id,
+        cycle_amount: cycleAmount,
+        cycle_duration: cycleDuration,
         current_cycle: 1,
       })
       .select()
@@ -35,16 +41,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: ajoError?.message || "Failed to create Ajo" }, { status: 400 });
     }
 
-    // Insert creator into user_ajos as head
-    const { error: userAjoError } = await supabaseServer
-      .from("user_ajos")
-      .insert({
-        user_id: userId,
-        ajo_id: ajoData.id,
-        your_contribution: 0,
-        payout_due: false,
-        is_head: true // make sure this column exists
-      });
+    // Insert creator as head in user_ajos
+    const { error: userAjoError } = await supabaseServer.from("user_ajos").insert({
+      user_id: user.id,
+      ajo_id: ajoData.id,
+      your_contribution: 0,
+      payout_due: false,
+      is_head: true,
+    });
 
     if (userAjoError) {
       return NextResponse.json({ error: userAjoError.message }, { status: 400 });
