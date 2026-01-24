@@ -25,7 +25,11 @@ type AjoRow = {
 
 export default function UserPage() {
   const { user, loading } = useUser();
-  const [wallet, setWallet] = useState<Wallet>({ available: 0, locked: 0, total: 0 });
+  const [wallet, setWallet] = useState<Wallet>({
+    available: 0,
+    locked: 0,
+    total: 0,
+  });
   const [amount, setAmount] = useState<number>(0);
   const [ajos, setAjos] = useState<AjoRow[]>([]);
   const [newAjoName, setNewAjoName] = useState<string>("");
