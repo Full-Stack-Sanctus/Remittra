@@ -41,13 +41,15 @@ async function seed() {
     },
   ]);
 
-  /*
-  
+  await supabaseServer.from("wallets").insert([
+    { user_id: adminData.user!.id, balance: 100000 },
+    { user_id: userData.user!.id, balance: 5000 },
+  ]);
+
   await supabase.from("ajos").insert([
     { name: "Team Ajo", created_by: adminData.user!.id, cycle_amount: 1000, current_cycle: 1 },
     { name: "Weekend Ajo", created_by: adminData.user!.id, cycle_amount: 500, current_cycle: 2 },
   ]);
-  */
 
   console.log("Seeding complete");
 }
