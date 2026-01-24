@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabaseClient } from "@/lib/supabaseClient";
 import { useUser } from "@/hooks/useUser";
 import Button from "@/components/Button";
 
@@ -27,22 +28,44 @@ export default function UserPage() {
   const [newAjoName, setNewAjoName] = useState("");
   const [cycleAmount, setCycleAmount] = useState(0);
 
-  // Fetch wallet and Ajo groups
+  // Fetch wallet and Ajo groups once user session exists
   useEffect(() => {
     if (!user) return;
     let mounted = true;
 
     const fetchData = async () => {
-      const walletData = await fetch("/api/wallet").then((r) => r.json());
-      const ajosData = await fetch("/api/ajos").then((r) => r.json());
+      try {
+        // Verify session
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (!sessionData?.session) return;
 
-      if (!mounted) return;
-      setWallet(walletData ?? { balance: 0 });
-      setAjos(ajosData ?? []);
+        // Wallet
+        const walletData = await fetch("/api/wallet").then((r) => r.json());
+        // Ajo groups
+        const ajosData = await fetch("/api/ajos").then((r) => r.json());
+
+        if (!mounted) return;
+        setWallet(walletData ?? { balance: 0 });
+        setAjos(ajosData ?? []);
+      } catch (err) {
+        console.error("Error fetching wallet/ajos:", err);
+      }
     };
 
     fetchData();
-    return () => { mounted = false };
+
+    // Subscribe to auth state changes (e.g., logout)
+    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setWallet({ balance: 0 });
+        setAjos([]);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, [user]);
 
   if (loading) return <div className="p-4">Loading...</div>;
@@ -77,6 +100,11 @@ export default function UserPage() {
   };
 
   // Ajo actions
+  const refreshAjos = async () => {
+    const data = await fetch("/api/ajos").then((r) => r.json());
+    setAjos(data);
+  };
+
   const createAjo = async () => {
     if (!newAjoName || cycleAmount <= 0) return alert("Enter valid details");
 
@@ -111,11 +139,6 @@ export default function UserPage() {
 
     alert("Contribution successful!");
     await refreshAjos();
-  };
-
-  const refreshAjos = async () => {
-    const data = await fetch("/api/ajos").then((r) => r.json());
-    setAjos(data);
   };
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabaseClient } from "@/lib/supabaseClient";
 import Button from "@/components/Button";
 
 type UserRow = {
@@ -18,25 +19,47 @@ type AjoRow = {
 export default function AdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [ajos, setAjos] = useState<AjoRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch data
   useEffect(() => {
     let mounted = true;
 
     const fetchData = async () => {
-      const [usersRes, ajosRes] = await Promise.all([
-        fetch("/api/users").then((r) => r.json()),
-        fetch("/api/ajos").then((r) => r.json()),
-      ]);
+      try {
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (!sessionData?.session) return;
 
-      if (!mounted) return;
-      setUsers(usersRes);
-      setAjos(ajosRes);
+        const [usersRes, ajosRes] = await Promise.all([
+          fetch("/api/users").then((r) => r.json()),
+          fetch("/api/ajos").then((r) => r.json()),
+        ]);
+
+        if (!mounted) return;
+        setUsers(usersRes);
+        setAjos(ajosRes);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching admin data:", err);
+        setLoading(false);
+      }
     };
 
     fetchData();
 
+    // Listen for auth changes
+    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setUsers([]);
+        setAjos([]);
+      } else {
+        fetchData();
+      }
+    });
+
     return () => {
       mounted = false;
+      listener.subscription.unsubscribe();
     };
   }, []);
 
@@ -66,6 +89,8 @@ export default function AdminPage() {
     });
     await refresh();
   };
+
+  if (loading) return <div className="p-4">Loading...</div>;
 
   return (
     <div className="p-4">

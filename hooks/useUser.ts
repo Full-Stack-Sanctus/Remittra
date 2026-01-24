@@ -16,29 +16,33 @@ export function useUser() {
 
     const fetchUser = async () => {
       try {
-        const { data, error } = await supabaseClient.auth.getUser();
-        if (error) throw error;
-
-        if (!data?.user) {
+        // Get session
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!sessionData?.session) {
           if (mounted) setUser(null);
           return;
         }
 
-        const userId = data.user.id;
+        // Get current user
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+        if (userError) throw userError;
+        if (!userData?.user) return;
 
-        // Fetch wallet balance
+        const userId = userData.user.id;
+
+        // Fetch wallet
         const { data: walletData, error: walletError } = await supabaseClient
           .from("wallets")
           .select("balance")
           .eq("user_id", userId)
           .single();
-
         if (walletError) throw walletError;
 
         if (mounted) {
           setUser({
             id: userId,
-            email: data.user.email ?? "",
+            email: userData.user.email ?? "",
             wallet_balance: walletData?.balance ?? 0,
           });
         }
@@ -51,17 +55,15 @@ export function useUser() {
 
     fetchUser();
 
-    // Optional: subscribe to auth changes (login/logout)
-    const { data: authListener } = supabaseClient.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session?.user) setUser(null);
-        else fetchUser();
-      }
-    );
+    // Subscribe to auth state changes (login/logout)
+    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) setUser(null);
+      else fetchUser();
+    });
 
     return () => {
       mounted = false;
-      authListener.subscription.unsubscribe();
+      listener.subscription.unsubscribe();
     };
   }, []);
 
