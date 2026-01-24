@@ -45,10 +45,15 @@ export default function Login() {
     } else {
       alert("Your account is not KYC-verified yet.");
     }
-   } catch (err: any) {
-     console.error("Login error:", err);
-     alert(err.message ?? "Login failed");
-    }
+   } catch (err: unknown) {
+       if (err instanceof Error) {
+         console.error("Login error:", err);
+         alert(err.message);
+       } else {
+         console.error("Login error:", err);
+         alert("Login failed");
+       }
+     }
    };
 
 
