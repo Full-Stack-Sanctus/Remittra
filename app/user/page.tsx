@@ -46,17 +46,26 @@ export default function UserPage() {
 
    const fetchData = async () => {
     try {
-      const walletData = await fetch("/api/wallet").then((r) => r.json());
-      const ajosData = await fetch("/api/ajos").then((r) => r.json());
+     const walletRes = await fetch("/api/wallet");
+     const walletData = await walletRes.json();
 
-      if (!mounted) return;
+     const ajosRes = await fetch("/api/ajos");
+     const ajosData = await ajosRes.json();
 
-      setWallet(walletData ?? { available: 0, locked: 0, total: 0 });
-      setAjos(ajosData ?? []);
-    } catch (err) {
-      console.error("Error fetching wallet/ajos:", err);
+     setWallet(
+      walletData && typeof walletData === "object"
+        ? walletData
+        : { available: 0, locked: 0, total: 0 }
+     );
+
+     setAjos(Array.isArray(ajosData) ? ajosData : []);
+   } catch (err) {
+     console.error("Error fetching wallet/ajos:", err);
+     setWallet({ available: 0, locked: 0, total: 0 });
+     setAjos([]);
     }
    };
+
 
    fetchData();
 

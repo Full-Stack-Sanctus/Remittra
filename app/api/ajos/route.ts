@@ -11,7 +11,6 @@ export async function GET() {
       { cookies: cookies() as any }
     );
 
-    // Get current user
     const {
       data: { user },
       error: userError,
@@ -21,7 +20,6 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch Ajos with user's participation
     const { data: ajosData, error: ajosError } = await supabase
       .from("ajos")
       .select(`
@@ -39,12 +37,19 @@ export async function GET() {
       `);
 
     if (ajosError) {
+      console.error("Ajos fetch error:", ajosError);
       return NextResponse.json({ error: ajosError.message }, { status: 400 });
     }
 
-    // Map data to frontend model
+    if (!Array.isArray(ajosData)) {
+      console.error("ajosData is not an array:", ajosData);
+      return NextResponse.json([], { status: 200 });
+    }
+
     const ajos = ajosData.map((ajo: any) => {
-      const userContribution = ajo.contributions.find((c: any) => c.user_id === user.id);
+      const userContribution = ajo.contributions.find(
+        (c: any) => c.user_id === user.id
+      );
       return {
         id: ajo.id,
         name: ajo.name,
@@ -60,7 +65,7 @@ export async function GET() {
 
     return NextResponse.json(ajos);
   } catch (err: any) {
-    console.error("GET /api/ajos error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("GET /api/ajos unexpected error:", err);
+    return NextResponse.json([], { status: 200 }); // always return array
   }
 }
