@@ -15,14 +15,21 @@ export async function POST(req: Request) {
       .eq("id", ajoId)
       .single();
 
-    if (ajoError || !ajo) return NextResponse.json({ error: "Ajo not found" }, { status: 404 });
-    if (ajo.created_by !== userId) return NextResponse.json({ error: "Only head can generate invite" }, { status: 403 });
+    if (ajoError || !ajo)
+      return NextResponse.json({ error: "Ajo not found" }, { status: 404 });
+    if (ajo.created_by !== userId)
+      return NextResponse.json(
+        { error: "Only head can generate invite" },
+        { status: 403 },
+      );
 
     // 2. Generate unique invite code
     const code = crypto.randomBytes(8).toString("hex");
 
     // 3. Set expiration
-    const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(
+      Date.now() + durationHours * 60 * 60 * 1000,
+    ).toISOString();
 
     // 4. Insert invite into DB
     const { data: inviteData, error: inviteError } = await supabaseServer
@@ -31,7 +38,11 @@ export async function POST(req: Request) {
       .select()
       .single();
 
-    if (inviteError || !inviteData) return NextResponse.json({ error: "Failed to create invite" }, { status: 500 });
+    if (inviteError || !inviteData)
+      return NextResponse.json(
+        { error: "Failed to create invite" },
+        { status: 500 },
+      );
 
     // 5. Return invite link
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/join/${code}`;
