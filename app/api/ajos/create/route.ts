@@ -1,8 +1,9 @@
-import { supabaseServer } from "@/lib/supabaseServer";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const { name, createdBy, cycleAmount } = await req.json();
+  const supabaseServer = getSupabaseServer();
   if (!name || !createdBy || !cycleAmount) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }

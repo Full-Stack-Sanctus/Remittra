@@ -1,9 +1,9 @@
-import { supabaseServer } from "@/lib/supabaseServer";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const { userId, amount } = await req.json();
-
+  const supabaseServer = getSupabaseServer();
   const { data: wallet } = await supabaseServer
     .from("wallets")
     .select("*")

@@ -1,8 +1,9 @@
-import { supabaseServer } from "@/lib/supabaseServer";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const { ajoId } = await req.json();
+  const supabaseServer = getSupabaseServer();
   const { data: ajo } = await supabaseServer
     .from("ajos")
     .select("*")
