@@ -70,7 +70,7 @@ export default function UserPage() {
         } else {
           fetchData();
         }
-      },
+      }
     );
 
     return () => {
@@ -193,7 +193,7 @@ export default function UserPage() {
     alert("Contribution successful!");
     await refreshAjos();
   };
-  
+
   const generateInvite = async (ajoId: string) => {
     const res = await fetch("/api/ajos/invite", {
       method: "POST",
@@ -207,10 +207,8 @@ export default function UserPage() {
     alert(`Invite Link (expires ${new Date(data.expiresAt).toLocaleString()}):\n${data.inviteLink}`);
   };
 
-  
   return (
     <div className="p-4">
-      {/* Wallet Section */}
       <h1 className="text-xl font-bold mb-4">My Wallet</h1>
       <div className="border p-4 mb-6">
         <p>Total Balance: ₦{wallet.total}</p>
@@ -231,7 +229,6 @@ export default function UserPage() {
         </div>
       </div>
 
-      {/* Create New Ajo */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-2">Create New Ajo</h2>
         <div className="flex flex-wrap items-center space-x-2 mb-2">
@@ -263,7 +260,6 @@ export default function UserPage() {
         </p>
       </div>
 
-      {/* Ajo List */}
       <h2 className="text-xl font-bold mb-2">Ajo Groups</h2>
       {ajos.map((ajo) => (
         <div
@@ -278,14 +274,11 @@ export default function UserPage() {
             {ajo.joined && <p>Your Contribution: ₦{ajo.your_contribution}</p>}
           </div>
           <div className="mt-2 md:mt-0 flex space-x-2">
-            {!ajo.joined && (
-<<<<<<< HEAD
-              <Button onClick={() => generateInvite(ajo.id)}>INVITE</Button>
-=======
-              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>
-                Join
-              </Button>
->>>>>>> origin/main
+            {!ajo.joined && ajo.created_by === user.id && (
+              <Button onClick={() => generateInvite(ajo.id)}>Invite</Button>
+            )}
+            {!ajo.joined && ajo.created_by !== user.id && (
+              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>Join</Button>
             )}
             {ajo.joined && (
               <Button
