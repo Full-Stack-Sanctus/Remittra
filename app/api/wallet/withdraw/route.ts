@@ -3,18 +3,24 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+  // Create Supabase server client with type-safe cookies
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies }
+    { cookies: cookies() as any } // ✅ Type assertion fixes build issue
   );
 
-  // Get logged-in user from session
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  // Get logged-in user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
   if (!user || userError) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Parse request body
   const { amount } = await req.json();
   if (!amount || amount <= 0) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -36,7 +42,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
   }
 
-  // Insert transaction
+  // Insert withdrawal transaction
   const { error: txError } = await supabase
     .from("wallet_transactions")
     .insert({ user_id: user.id, type: "withdrawal", amount });
@@ -57,5 +63,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: updateError?.message || "Failed to update wallet" }, { status: 400 });
   }
 
+  // Return the new wallet balance
   return NextResponse.json({ ok: true, newBalance: updatedWallet.balance });
 }
