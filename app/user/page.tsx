@@ -164,7 +164,21 @@ export default function UserPage() {
     alert("Contribution successful!");
     await refreshAjos();
   };
+  
+  const generateInvite = async (ajoId: string) => {
+    const res = await fetch("/api/ajos/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ajoId, userId: user.id }),
+    });
 
+    const data = await res.json();
+    if (!res.ok) return alert(data.error || "Failed to generate invite");
+
+    alert(`Invite Link (expires ${new Date(data.expiresAt).toLocaleString()}):\n${data.inviteLink}`);
+  };
+
+  
   return (
     <div className="p-4">
       {/* Wallet Section */}
@@ -234,7 +248,7 @@ export default function UserPage() {
           </div>
           <div className="mt-2 md:mt-0 flex space-x-2">
             {!ajo.joined && (
-              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>Join</Button>
+              <Button onClick={() => generateInvite(ajo.id)}>INVITE</Button>
             )}
             {ajo.joined && (
               <Button
