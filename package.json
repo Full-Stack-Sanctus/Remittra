@@ -7,17 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --ext .ts,.tsx .",
-    "type-check": "tsc --noEmit",
+    "type-check": "npx tsc --noEmit",
     "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
-    "seed": "tsc scripts/seed.ts --outDir scripts-dist && node scripts-dist/scripts/seed.js"
+    "seed": "npx tsc scripts/seed.ts --outDir scripts-dist && node scripts-dist/scripts/seed.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.91.1",
     "next": "16.1.4",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "tsc": "^2.0.4"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -32,4 +31,3 @@
     "typescript": "^5.9.3"
   }
 }
-
