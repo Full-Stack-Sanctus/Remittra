@@ -31,6 +31,7 @@ export default function UserPage() {
   // Fetch wallet and Ajo groups once user session exists
   useEffect(() => {
     if (!user) return;
+
     let mounted = true;
 
     const fetchData = async () => {
@@ -53,23 +54,20 @@ export default function UserPage() {
     };
 
     fetchData();
-<<<<<<< HEAD
 
     // Subscribe to auth state changes (e.g., logout)
     const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       if (!session?.user) {
         setWallet({ balance: 0 });
         setAjos([]);
+      } else {
+        fetchData();
       }
     });
 
     return () => {
       mounted = false;
       listener.subscription.unsubscribe();
-=======
-    return () => {
-      mounted = false;
->>>>>>> origin/main
     };
   }, [user]);
 
