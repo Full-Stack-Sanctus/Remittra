@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabaseClient } from "../lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabaseClient";
 import Button from "@/components/Button";
 
 type Wallet = {
