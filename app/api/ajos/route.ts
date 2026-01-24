@@ -86,6 +86,12 @@ export async function GET() {
         };
       }
     });
+    
+    console.log("User session:", user);
+    console.log("Is Admin:", isAdmin);
+    console.log("Ajos raw data:", ajosData);
+    console.log("Ajos fetch error:", ajosError);
+
 
     return NextResponse.json(ajos, { status: 200 });
   } catch (err: any) {
