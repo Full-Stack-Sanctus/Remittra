@@ -1,20 +1,34 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = cookies();
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (!user || error) {
-    console.log("AUTH ERROR", error);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { name, cycleAmount, cycleDuration } = await req.json();
 
-  const { data, error: insertError } = await supabase
+  const { data: ajo, error: ajoError } = await supabase
     .from("ajos")
     .insert({
       name,
@@ -26,9 +40,9 @@ export async function POST(req: Request) {
     .select()
     .single();
 
-  if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 400 });
+  if (ajoError) {
+    return NextResponse.json({ error: ajoError.message }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, ajo: data });
+  return NextResponse.json({ ok: true, ajo });
 }
