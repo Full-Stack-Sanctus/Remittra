@@ -1,102 +1,136 @@
-// seed.ts
+// scripts/seed.ts
 import { getSupabaseServer } from "../lib/supabaseServer";
+import type { AuthError } from "@supabase/supabase-js";
 
 const supabaseServer = getSupabaseServer(); // uses service_role key
 
-async function seed() {
+type AjoRow = {
+  id: string;
+  name: string;
+  created_by: string;
+  cycle_amount: number;
+  current_cycle: number;
+};
+
+async function createUserIfNotExists(
+  email: string,
+  password: string
+): Promise<string> {
+  const { data, error } = await supabaseServer.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    const authError = error as AuthError;
+
+    if (authError.status === 400) {
+      // User already exists → fetch from users table
+      const { data: existingUser, error: fetchError } =
+        await supabaseServer
+          .from("users")
+          .select("id")
+          .eq("email", email)
+          .single();
+
+      if (fetchError || !existingUser) {
+        throw fetchError ?? new Error("User exists but not found in users table");
+      }
+
+      return existingUser.id;
+    }
+
+    throw error;
+  }
+
+  if (!data.user) {
+    throw new Error("User creation failed without error");
+  }
+
+  return data.user.id;
+}
+
+async function seed(): Promise<void> {
   try {
-    // ----- CREATE USERS VIA AUTH -----
-    const { data: adminData, error: adminError } =
-      await supabaseServer.auth.admin.createUser({
-        email: "admin@demo.com",
-        password: "Admin123!",
-        email_confirm: true,
-      });
+    // ----- CREATE USERS -----
+    const adminId = await createUserIfNotExists(
+      "admin@demo.com",
+      "Admin123!"
+    );
 
-    if (adminError) {
-      if ((adminError as any).statusCode === 400) {
-        console.log("Admin already exists, skipping creation");
-      } else throw adminError;
-    }
+    const userId = await createUserIfNotExists(
+      "user@demo.com",
+      "User123!"
+    );
 
-    const { data: userData, error: userError } =
-      await supabaseServer.auth.admin.createUser({
-        email: "user@demo.com",
-        password: "User123!",
-        email_confirm: true,
-      });
-
-    if (userError) {
-      if ((userError as any).statusCode === 400) {
-        console.log("User already exists, skipping creation");
-      } else throw userError;
-    }
-
-    // ----- GET OR FALLBACK TO EXISTING USER IDS -----
-    const adminId =
-      adminData?.user?.id ??
-      (
-        await supabaseServer
-          .from("users")
-          .select("id")
-          .eq("email", "admin@demo.com")
-          .single()
-      ).data.id;
-
-    const userId =
-      userData?.user?.id ??
-      (
-        await supabaseServer
-          .from("users")
-          .select("id")
-          .eq("email", "user@demo.com")
-          .single()
-      ).data.id;
-
-    // ----- UPSERT INTO USERS TABLE -----
+    // ----- USERS TABLE -----
     await supabaseServer.from("users").upsert([
       {
         id: adminId,
         email: "admin@demo.com",
-        kyc_verified: true,
         is_admin: true,
+        kyc_verified: true,
         wallet_balance: 100000,
       },
       {
         id: userId,
         email: "user@demo.com",
-        kyc_verified: true,
         is_admin: false,
+        kyc_verified: true,
         wallet_balance: 5000,
       },
     ]);
 
-    // ----- UPSERT INTO WALLETS TABLE -----
+    // ----- WALLETS -----
     await supabaseServer.from("wallets").upsert([
       { user_id: adminId, balance: 100000 },
       { user_id: userId, balance: 5000 },
     ]);
 
-    // ----- UPSERT INTO AJOS TABLE -----
-    const { data: ajosData } = await supabaseServer
-      .from("ajos")
-      .upsert([
-        { name: "Team Ajo", created_by: adminId, cycle_amount: 1000, current_cycle: 1 },
-        { name: "Weekend Ajo", created_by: adminId, cycle_amount: 500, current_cycle: 2 },
-      ])
-      .select("*");
+    // ----- AJOS -----
+    const { data: ajosData, error: ajosError } =
+      await supabaseServer
+        .from("ajos")
+        .upsert<AjoRow>([
+          {
+            name: "Team Ajo",
+            created_by: adminId,
+            cycle_amount: 1000,
+            current_cycle: 1,
+          },
+          {
+            name: "Weekend Ajo",
+            created_by: adminId,
+            cycle_amount: 500,
+            current_cycle: 2,
+          },
+        ])
+        .select();
 
-    // ----- OPTIONAL: INITIAL USER_AJOS -----
-    const teamAjoId = ajosData?.find((a: any) => a.name === "Team Ajo")?.id;
-    if (teamAjoId) {
+    if (ajosError) {
+      throw ajosError;
+    }
+
+    const teamAjo = ajosData?.find(
+      (ajo) => ajo.name === "Team Ajo"
+    );
+
+    if (teamAjo) {
       await supabaseServer.from("user_ajos").upsert([
-        { user_id: userId, ajo_id: teamAjoId, your_contribution: 0, payout_due: false },
+        {
+          user_id: userId,
+          ajo_id: teamAjo.id,
+          your_contribution: 0,
+          payout_due: false,
+        },
       ]);
     }
 
     console.log("Seeding complete ✅");
-  } catch (err) {
-    console.error("Seeder error:", err);
+  } catch (error) {
+    console.error("Seeder error:", error);
+    process.exit(1);
   }
 }
 
