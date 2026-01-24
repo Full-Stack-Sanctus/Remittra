@@ -5,13 +5,6 @@ export async function POST(req: NextRequest) {
   try {
     const supabaseServer = getSupabaseServer();
 
-    // Get Bearer token from request headers
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing authorization token" }, { status: 401 });
-    }
-    const token = authHeader.split(" ")[1];
-
     // Verify session and get user
     const { data: { user }, error: userError } = await supabaseServer.auth.getUser(token);
     if (userError || !user) {
