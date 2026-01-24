@@ -1,4 +1,4 @@
-import { getSupabaseServer } from './lib/supabaseServer';
+import { getSupabaseServer } from '../lib/supabaseServer';
 
 const supabaseServer = getSupabaseServer(); // ← call the function to get the client
 
