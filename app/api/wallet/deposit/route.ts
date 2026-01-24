@@ -6,7 +6,9 @@ export async function POST(req: Request) {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies }
+    {
+      cookies: cookies() as any, // ✅ Type assertion fixes the build error
+    }
   );
 
   // Get logged-in user from session
@@ -15,6 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Parse request body
   const { amount } = await req.json();
   if (!amount || amount <= 0) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
