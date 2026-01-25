@@ -26,7 +26,7 @@ export function getSupabaseServer(): SupabaseClient {
       },
     },
     // This enables the server to read cookies for identifying the logged-in user
-    cookies: cookies() as any,
+    // cookies: cookies() as any,
   });
 }
 
