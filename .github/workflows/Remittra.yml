@@ -1,4 +1,4 @@
-name: Build & Deploy Next.js to Vercel
+name: Lint, Format & Deploy
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build, Lint, Prettier, Seed, and Deploy
+  check-and-deploy:
+    name: Lint, Prettier, and Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -48,20 +48,16 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore: format code with Prettier [skip ci]" || echo "No changes to commit"
-          git push origin HEAD:main
+          git push origin main
 
-      # 7️⃣ Run Supabase Seed
-      - name: Seed Supabase DB
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: npm run seed
+      # 7️⃣ Run Supabase Seed (Commented out)
+      # - name: Seed Supabase DB
+      #   env:
+      #     SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      #     SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      #   run: npm run seed
 
-      # 8️⃣ Build Next.js app
-      - name: Build
-        run: npm run build
-
-      # 9️⃣ Deploy to Vercel
+      # 8️⃣ Deploy to Vercel (Vercel will handle the Build internally)
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:

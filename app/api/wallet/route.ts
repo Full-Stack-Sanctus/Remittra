@@ -1,47 +1,38 @@
-// app/api/wallet/route.ts
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: cookies() as any }
-    );
+    const supabaseServer = getSupabaseServer({ req }); // pass req
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    // ✅ Get the current logged-in user
+    const { data: { user }, error: userError } = await supabaseServer.auth.getUser();
 
-    if (!user || userError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (userError || !user) {
+      console.error("Error fetching user:", userError);
+      return NextResponse.json({ available: 0, locked: 0, total: 0 });
     }
 
-    const { data: wallet, error: walletError } = await supabase
+    // 2️⃣ Fetch wallet for this user
+    const { data: wallet, error: walletError } = await supabaseServer
       .from("wallets")
-      .select("balance, locked, available")
+      .select("available, locked, balance")
       .eq("user_id", user.id)
       .single();
 
     if (walletError) {
       console.error("Wallet fetch error:", walletError);
-      return NextResponse.json({ error: walletError.message }, { status: 400 });
-    }
-
-    if (!wallet) {
       return NextResponse.json({ available: 0, locked: 0, total: 0 });
     }
 
     return NextResponse.json({
-      available: wallet.available ?? 0,
-      locked: wallet.locked ?? 0,
-      total: wallet.balance ?? 0,
+      available: wallet?.available ?? 0,
+      locked: wallet?.locked ?? 0,
+      total: wallet?.balance ?? 0,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("GET /api/wallet unexpected error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ available: 0, locked: 0, total: 0 }, { status: 500 });
   }
 }
+

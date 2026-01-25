@@ -1,68 +1,50 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  // Create Supabase server client with type-safe cookies
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: cookies() as any } // ✅ Type assertion fixes build issue
-  );
+  try {
+    const supabaseServer = getSupabaseServer();
 
-  // Get logged-in user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+    // ⚠️ DEV ONLY
+    const userId = "PUT_A_REAL_USER_ID_HERE";
 
-  if (!user || userError) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { amount } = await req.json();
+    const value = Number(amount);
+
+    if (!value || value <= 0) {
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    }
+
+    const { data: wallet, error: walletError } = await supabaseServer
+      .from("wallets")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (walletError || !wallet) {
+      return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
+    }
+
+    await supabaseServer.from("wallet_transactions").insert({
+      user_id: userId,
+      type: "deposit",
+      amount: value,
+    });
+
+    const { data: updatedWallet } = await supabaseServer
+      .from("wallets")
+      .update({ balance: wallet.balance + value })
+      .eq("id", wallet.id)
+      .select()
+      .single();
+
+    return NextResponse.json({
+      ok: true,
+      newBalance: updatedWallet.balance,
+    });
+  } catch (err) {
+    console.error("POST /api/wallet:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  // Parse request body
-  const { amount } = await req.json();
-  if (!amount || amount <= 0) {
-    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
-  }
-
-  // Fetch wallet for the current user
-  const { data: wallet, error: walletError } = await supabase
-    .from("wallets")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (walletError || !wallet) {
-    return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
-  }
-
-  // Check if wallet has enough balance
-  if (wallet.balance < amount) {
-    return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
-  }
-
-  // Insert withdrawal transaction
-  const { error: txError } = await supabase
-    .from("wallet_transactions")
-    .insert({ user_id: user.id, type: "withdrawal", amount });
-
-  if (txError) {
-    return NextResponse.json({ error: txError.message }, { status: 400 });
-  }
-
-  // Update wallet balance
-  const { error: updateError, data: updatedWallet } = await supabase
-    .from("wallets")
-    .update({ balance: wallet.balance - amount })
-    .eq("id", wallet.id)
-    .select()
-    .single();
-
-  if (updateError || !updatedWallet) {
-    return NextResponse.json({ error: updateError?.message || "Failed to update wallet" }, { status: 400 });
-  }
-
-  // Return the new wallet balance
-  return NextResponse.json({ ok: true, newBalance: updatedWallet.balance });
 }
+

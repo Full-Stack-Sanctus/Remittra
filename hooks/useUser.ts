@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabaseClient } from "../lib/supabaseClient";
 
 export type User = {
@@ -10,59 +10,60 @@ export type User = {
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchingRef = useRef(false); // 🔒 prevents double calls
+
+  const fetchUser = async (session: any) => {
+    if (!session?.user || fetchingRef.current) return;
+
+    fetchingRef.current = true;
+
+    try {
+      const userId = session.user.id;
+
+      const { data: walletData, error } = await supabaseClient
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) throw error;
+
+      setUser({
+        id: userId,
+        email: session.user.email ?? "",
+        wallet_balance: walletData?.balance ?? 0,
+      });
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    } finally {
+      fetchingRef.current = false;
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
 
-    const fetchUser = async () => {
-      try {
-        // Get session
-        const { data: sessionData, error: sessionError } =
-          await supabaseClient.auth.getSession();
-        if (sessionError) throw sessionError;
-        if (!sessionData?.session) {
-          if (mounted) setUser(null);
-          return;
-        }
+    supabaseClient.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
 
-        // Get current user
-        const { data: userData, error: userError } =
-          await supabaseClient.auth.getUser();
-        if (userError) throw userError;
-        if (!userData?.user) return;
-
-        const userId = userData.user.id;
-
-        // Fetch wallet
-        const { data: walletData, error: walletError } = await supabaseClient
-          .from("wallets")
-          .select("balance")
-          .eq("user_id", userId)
-          .single();
-        if (walletError) throw walletError;
-
-        if (mounted) {
-          setUser({
-            id: userId,
-            email: userData.user.email ?? "",
-            wallet_balance: walletData?.balance ?? 0,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching user:", err);
-      } finally {
-        if (mounted) setLoading(false);
+      if (!data.session) {
+        setUser(null);
+        setLoading(false);
+        return;
       }
-    };
 
-    fetchUser();
+      fetchUser(data.session);
+    });
 
-    // Subscribe to auth state changes (login/logout)
     const { data: listener } = supabaseClient.auth.onAuthStateChange(
       (_event, session) => {
-        if (!session?.user) setUser(null);
-        else fetchUser();
-      },
+        if (!session) {
+          setUser(null);
+        } else {
+          fetchUser(session);
+        }
+      }
     );
 
     return () => {
@@ -73,3 +74,4 @@ export function useUser() {
 
   return { user, loading };
 }
+

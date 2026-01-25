@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  // ✅ cookies() is async in route handlers
   const cookieStore = await cookies();
 
   const supabase = createServerClient(
@@ -15,20 +14,31 @@ export async function POST(req: Request) {
           return cookieStore.get(name)?.value;
         },
       },
-    },
+    }
   );
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (!user || error) {
+  // ✅ Get the authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (!user || authError) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { name, cycleAmount, cycleDuration } = await req.json();
 
+  // ✅ Validate inputs
+  if (cycleAmount <= 0 || cycleDuration <= 0) {
+    return NextResponse.json({ error: "Cycle amount and duration must be greater than 0" }, { status: 400 });
+  }
+
+  const totalContribution = cycleAmount * cycleDuration;
+  const MIN_TOTAL = 1000; // Example minimum, adjust as needed
+  if (totalContribution < MIN_TOTAL) {
+    return NextResponse.json({
+      error: `Total contribution (cycleAmount x cycleDuration) must be at least ${MIN_TOTAL}`,
+    }, { status: 400 });
+  }
+
+  // 1️⃣ Create the ajo
   const { data: ajo, error: ajoError } = await supabase
     .from("ajos")
     .insert({
@@ -45,5 +55,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: ajoError.message }, { status: 400 });
   }
 
+  // 2️⃣ Add the user as head in user_ajos
+  const { error: userAjoError } = await supabase
+    .from("user_ajos")
+    .insert({
+      ajo_id: ajo.id,
+      user_id: user.id,
+      is_head: true,
+    });
+
+  if (userAjoError) {
+    return NextResponse.json({ error: userAjoError.message }, { status: 400 });
+  }
+
+  // ✅ Success response
   return NextResponse.json({ ok: true, ajo });
 }
+

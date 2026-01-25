@@ -11,97 +11,120 @@ type Wallet = {
   total: number;
 };
 
+const EMPTY_WALLET: Wallet = {
+  available: 0,
+  locked: 0,
+  total: 0,
+};
+
 export default function WalletSection() {
   const { user, loading } = useUser();
-  const [wallet, setWallet] = useState<Wallet>({
-    available: 0,
-    locked: 0,
-    total: 0,
-  });
-  const [amount, setAmount] = useState<string>("");
+  const [wallet, setWallet] = useState<Wallet>(EMPTY_WALLET);
+  const [amount, setAmount] = useState("");
 
-  const formatInput = (value: string) =>
-    value.replace(/\D/g, "").replace(/^0+/, "");
+  const formatInput = (value: string) => value.replace(/\D/g, "").replace(/^0+/, "");
+
+  // 🔹 Fetch wallet for authenticated user
+  const fetchWallet = async () => {
+    const session = await supabaseClient.auth.getSession();
+    const token = session.data.session?.access_token;
+    if (!token) return setWallet(EMPTY_WALLET);
+
+    try {
+      const res = await fetch("/api/wallet", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch wallet");
+      const data = await res.json();
+      setWallet(data);
+    } catch (err) {
+      console.error("Wallet fetch error:", err);
+      setWallet(EMPTY_WALLET);
+    }
+  };
 
   useEffect(() => {
-    if (!user) return;
-    let mounted = true;
+    if (user?.id) fetchWallet();
+  }, [user?.id]);
 
-    const fetchWallet = async () => {
-      try {
-        const walletRes = await fetch("/api/wallet");
-        const walletData = await walletRes.json();
-
-        if (!mounted) return;
-
-        setWallet(
-          walletData && typeof walletData === "object"
-            ? walletData
-            : { available: 0, locked: 0, total: 0 }
-        );
-      } catch {
-        setWallet({ available: 0, locked: 0, total: 0 });
-      }
-    };
-
-    fetchWallet();
-
-    const { data: listener } = supabaseClient.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session?.user) {
-          setWallet({ available: 0, locked: 0, total: 0 });
-        } else {
-          fetchWallet();
-        }
-      }
-    );
-
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
-  }, [user]);
+  // 🔹 Reset wallet on sign-out
+  useEffect(() => {
+    const { data } = supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") setWallet(EMPTY_WALLET);
+      if (event === "SIGNED_IN") fetchWallet();
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (!user) return <div className="p-4">Please sign in</div>;
 
+  // 🔹 Deposit
   const deposit = async () => {
     const amt = Number(amount);
     if (amt <= 0) return alert("Enter a valid amount");
 
-    const res = await fetch("/api/wallet/deposit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: amt }),
-    });
-    if (!res.ok) return alert("Deposit failed");
+    const session = await supabaseClient.auth.getSession();
+    const token = session.data.session?.access_token;
+    if (!token) return alert("Not signed in");
 
-    setWallet((w) => ({
-      ...w,
-      available: w.available + amt,
-      total: w.total + amt,
-    }));
-    setAmount("");
+    try {
+      const res = await fetch("/api/wallet/deposit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount: amt }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        return alert(err.error || "Deposit failed");
+      }
+
+      const data = await res.json();
+      // Update wallet from server response
+      setWallet((w) => ({ ...w, available: data.newBalance, total: data.newBalance }));
+      setAmount("");
+    } catch (err) {
+      console.error("Deposit error:", err);
+      alert("Deposit failed");
+    }
   };
 
+  // 🔹 Withdraw
   const withdraw = async () => {
     const amt = Number(amount);
-    if (amt <= 0 || amt > wallet.available)
-      return alert("Cannot withdraw more than available balance");
+    if (amt <= 0 || amt > wallet.available) return alert("Cannot withdraw more than available balance");
 
-    const res = await fetch("/api/wallet/withdraw", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: amt }),
-    });
-    if (!res.ok) return alert("Withdrawal failed");
+    const session = await supabaseClient.auth.getSession();
+    const token = session.data.session?.access_token;
+    if (!token) return alert("Not signed in");
 
-    setWallet((w) => ({
-      ...w,
-      available: w.available - amt,
-      total: w.total - amt,
-    }));
-    setAmount("");
+    try {
+      const res = await fetch("/api/wallet/withdraw", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount: amt }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        return alert(err.error || "Withdrawal failed");
+      }
+
+      const data = await res.json();
+      setWallet((w) => ({ ...w, available: data.newBalance, total: data.newBalance }));
+      setAmount("");
+    } catch (err) {
+      console.error("Withdrawal error:", err);
+      alert("Withdrawal failed");
+    }
   };
 
   return (
