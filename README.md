@@ -196,10 +196,21 @@ App runs on [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Deployment
+## Deployment (DevOps / CI)
 
-* Deployed via **Vercel** with GitHub Actions: lint → type-check → build → deploy
-* Frontend uses **public anon key**, all sensitive server actions go through **service role key API routes**
++ Deployment: Vercel via GitHub Actions
+
++ CI Pipeline:
+
++ Install dependencies (npm install)
+
++ Lint code (ESLint) and auto-fix formatting issues with Prettier
+
++ TypeScript type check to catch type errors
+
++ Build Next.js app
+
++ Deploy to production
 
 ---
 
