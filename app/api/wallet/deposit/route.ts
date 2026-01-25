@@ -1,22 +1,23 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: cookies() as any }
-    );
+    const supabaseServer = getSupabaseServer();
 
-    const { data, error: userError } = await supabase.auth.getUser();
-    if (userError || !data?.user) {
+    // 1️⃣ Get the authenticated user
+    const { data: usersData, error: userError } = await supabaseServer
+      .from("users")
+      .select("id")
+      .limit(1); // demo: pick first user, replace with your auth logic
+
+    if (userError || !usersData?.[0]) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = data.user;
+    const user = usersData[0];
 
+    // 2️⃣ Parse request body
     const body = await req.json();
     const amount = Number(body.amount);
 
@@ -24,7 +25,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
-    const { data: wallet, error: walletError } = await supabase
+    // 3️⃣ Fetch user's wallet
+    const { data: wallet, error: walletError } = await supabaseServer
       .from("wallets")
       .select("*")
       .eq("user_id", user.id)
@@ -34,7 +36,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
     }
 
-    const { error: txError } = await supabase
+    // 4️⃣ Insert wallet transaction
+    const { error: txError } = await supabaseServer
       .from("wallet_transactions")
       .insert({ user_id: user.id, type: "deposit", amount });
 
@@ -42,7 +45,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: txError.message }, { status: 400 });
     }
 
-    const { data: updatedWallet, error: updateError } = await supabase
+    // 5️⃣ Update wallet balance
+    const { data: updatedWallet, error: updateError } = await supabaseServer
       .from("wallets")
       .update({ balance: wallet.balance + amount })
       .eq("id", wallet.id)
