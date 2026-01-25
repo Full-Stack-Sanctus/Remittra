@@ -22,37 +22,42 @@ type AjoGroupsSectionProps = {
 };
 
 export default function AjoGroupsSection({ ajos, advanceCycle }: AjoGroupsSectionProps) {
-  if (ajos.length === 0) return <p>No Ajo groups found</p>;
+  if (ajos.length === 0) {
+    return <p className="text-gray-500">No Ajo groups found</p>;
+  }
 
   return (
-    <div>
-      {ajos.map((a) => (
+    <div className="space-y-4">
+      {ajos.map((ajo) => (
         <div
-          key={a.id}
-          className="border p-2 mb-2 flex flex-col md:flex-row justify-between items-start md:items-center"
+          key={ajo.id}
+          className="border p-4 rounded-lg shadow-sm hover:shadow-md transition flex flex-col md:flex-row justify-between items-start md:items-center"
         >
+          {/* Left content: Ajo info */}
           <div className="flex flex-col">
-            <span className="font-medium">
-              {a.name} — Cycle {a.current_cycle}
+            <span className="font-semibold text-lg">
+              {ajo.name} — Cycle {ajo.current_cycle}
             </span>
 
-            {a.contributions && a.contributions.length > 0 ? (
-              <ul className="mt-1 text-sm text-gray-700 space-y-1">
-                {a.contributions.map((c) => (
+            {/* Contributions list */}
+            {ajo.contributions && ajo.contributions.length > 0 ? (
+              <ul className="mt-2 text-sm text-gray-700 space-y-1">
+                {ajo.contributions.map((c) => (
                   <li key={c.user_id}>
-                    User <span className="font-semibold">{c.user_id}</span>: ${c.amount} —{" "}
+                    <span className="font-medium">User {c.user_id}</span>: ${c.amount} —{" "}
                     {c.payout_due ? "Payout Due" : "Not Due"}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500 mt-1">No contributions yet</p>
+              <p className="mt-2 text-sm text-gray-500">No contributions yet</p>
             )}
           </div>
 
-          <Button className="mt-2 md:mt-0" onClick={() => advanceCycle(a.id)}>
-            Advance Cycle
-          </Button>
+          {/* Right content: Button */}
+          <div className="mt-3 md:mt-0 md:ml-4">
+            <Button onClick={() => advanceCycle(ajo.id)}>Advance Cycle</Button>
+          </div>
         </div>
       ))}
     </div>
