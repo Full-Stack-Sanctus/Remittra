@@ -5,8 +5,7 @@ export async function GET() {
   try {
     const supabaseServer = getSupabaseServer();
 
-    // 1️⃣ Get logged-in user from "users" table
-    // Replace this with proper auth later; for now we pick the first user for demo
+    // 1️⃣ Get logged-in user (replace with proper auth later)
     const { data: usersData, error: userError } = await supabaseServer
       .from("users")
       .select("id, is_admin")
@@ -44,9 +43,9 @@ export async function GET() {
       return NextResponse.json([], { status: 200 });
     }
 
-    // 3️⃣ Map contributions based on admin vs normal user
+    // 3️⃣ Map contributions properly
     const ajos = ajosData.map((ajo: any) => {
-      const contributions = Array.isArray(ajo.user_ajos) ? ajo.user_ujos : [];
+      const contributions = Array.isArray(ajo.user_ajos) ? ajo.user_ajos : [];
 
       if (isAdmin) {
         return {
