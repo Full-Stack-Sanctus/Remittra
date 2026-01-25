@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const supabaseServer = getSupabaseServer();
 
-    // 1️⃣ Get logged-in user (replace with proper auth later)
+    // 1️⃣ Get logged-in user (demo: pick first user)
     const { data: usersData, error: userError } = await supabaseServer
       .from("users")
       .select("id, is_admin")
@@ -28,7 +28,7 @@ export async function GET() {
         current_cycle,
         user_ajos:user_ajos(
           user_id,
-          amount,
+          your_contribution,
           payout_due
         )
       `)
@@ -61,7 +61,7 @@ export async function GET() {
           name: ajo.name,
           current_cycle: ajo.current_cycle,
           joined: !!userContribution,
-          your_contribution: userContribution?.amount ?? 0,
+          your_contribution: userContribution?.your_contribution ?? 0,
           payout_due: userContribution?.payout_due ?? false,
         };
       }
