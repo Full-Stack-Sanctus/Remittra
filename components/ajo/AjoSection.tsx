@@ -25,34 +25,28 @@ type AjoRow = {
 
 export default function AjoSection() {
   const { user, loading } = useUser();
-  const [wallet, setWallet] = useState<Wallet>({
-    available: 0,
-    locked: 0,
-    total: 0,
-  });
+  const [wallet, setWallet] = useState<Wallet>({ available: 0, locked: 0, total: 0 });
   const [ajos, setAjos] = useState<AjoRow[]>([]);
   const [newAjoName, setNewAjoName] = useState("");
   const [cycleAmount, setCycleAmount] = useState("");
   const [cycleDuration, setCycleDuration] = useState("1");
 
-  const formatInput = (value: string) =>
-    value.replace(/\D/g, "").replace(/^0+/, "");
+  const formatInput = (value: string) => value.replace(/\D/g, "").replace(/^0+/, "");
 
+  // Fetch wallet and Ajos
   useEffect(() => {
     if (!user) return;
     let mounted = true;
 
     const fetchData = async () => {
       try {
-        const walletRes = await fetch("/api/wallet");
-        const walletData = await walletRes.json();
-        const ajosRes = await fetch("/api/ajos");
-        const ajosData = await ajosRes.json();
-
+        const [walletRes, ajosRes] = await Promise.all([
+          fetch("/api/wallet").then((r) => r.json()),
+          fetch("/api/ajos").then((r) => r.json()),
+        ]);
         if (!mounted) return;
-
-        setWallet(walletData);
-        setAjos(ajosData ?? []);
+        setWallet(walletRes);
+        setAjos(ajosRes ?? []);
       } catch {
         setWallet({ available: 0, locked: 0, total: 0 });
         setAjos([]);
@@ -61,16 +55,12 @@ export default function AjoSection() {
 
     fetchData();
 
-    const { data: listener } = supabaseClient.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session?.user) {
-          setWallet({ available: 0, locked: 0, total: 0 });
-          setAjos([]);
-        } else {
-          fetchData();
-        }
-      }
-    );
+    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setWallet({ available: 0, locked: 0, total: 0 });
+        setAjos([]);
+      } else fetchData();
+    });
 
     return () => {
       mounted = false;
@@ -79,18 +69,18 @@ export default function AjoSection() {
   }, [user]);
 
   if (loading) return <div className="p-4">Loading...</div>;
-  if (!user) return;
+  if (!user) return null;
 
   const refreshAjos = async () => {
     const data = await fetch("/api/ajos").then((r) => r.json());
     setAjos(data ?? []);
   };
 
+  // Create new Ajo
   const createAjo = async () => {
     const amt = Number(cycleAmount);
     const dur = Number(cycleDuration);
-    if (!newAjoName || amt <= 0 || dur <= 0)
-      return alert("Enter valid details");
+    if (!newAjoName || amt <= 0 || dur <= 0) return alert("Enter valid details");
 
     const res = await fetch("/api/ajos/create", {
       method: "POST",
@@ -102,6 +92,7 @@ export default function AjoSection() {
         cycleDuration: dur,
       }),
     });
+
     if (!res.ok) return alert("Failed to create Ajo");
 
     setNewAjoName("");
@@ -110,44 +101,62 @@ export default function AjoSection() {
     await refreshAjos();
   };
 
-  const joinAjo = async (ajoId: string, amount: number) => {
-    if (wallet.available < amount)
-      return alert("Insufficient balance to join this Ajo.");
+  // Generate invite link (only for head)
+  const generateInviteLink = async (ajoId: string) => {
+    try {
+      const res = await fetch("/api/ajos/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ajoId, userId: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || "Failed to generate invite");
 
-    await fetch("/api/ajos/join", {
+      navigator.clipboard.writeText(data.inviteLink);
+      alert(`Invite copied! Expires at: ${new Date(data.expiresAt).toLocaleString()}`);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to generate invite");
+    }
+  };
+
+  // Join via wallet (if not using invite link)
+  const joinAjo = async (ajoId: string, amount: number) => {
+    if (wallet.available < amount) return alert("Insufficient balance to join this Ajo.");
+
+    const res = await fetch("/api/ajos/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId }),
+      body: JSON.stringify({ ajoId, userId: user.id }),
     });
 
-    setWallet((w) => ({
-      ...w,
-      available: w.available - amount,
-      locked: w.locked + amount,
-    }));
+    const data = await res.json();
+    if (!res.ok) return alert(data.error || "Failed to join Ajo");
 
+    setWallet((w) => ({ ...w, available: w.available - amount, locked: w.locked + amount }));
     await refreshAjos();
   };
 
+  // Contribute to Ajo
   const contribute = async (ajoId: string, amount: number) => {
     if (wallet.locked < amount) return alert("Insufficient locked funds");
 
-    await fetch("/api/ajos/contribute", {
+    const res = await fetch("/api/ajos/contribute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ajoId }),
     });
 
-    setWallet((w) => ({
-      ...w,
-      locked: w.locked - amount,
-    }));
+    const data = await res.json();
+    if (!res.ok) return alert(data.error || "Failed to contribute");
 
+    setWallet((w) => ({ ...w, locked: w.locked - amount }));
     await refreshAjos();
   };
 
   return (
     <div>
+      {/* Create Ajo */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-2">Create New Ajo</h2>
 
@@ -157,14 +166,12 @@ export default function AjoSection() {
           value={newAjoName}
           onChange={(e) => setNewAjoName(e.target.value)}
         />
-
         <input
           className="border p-2 w-32 mr-2"
           placeholder="Cycle Amount"
           value={cycleAmount}
           onChange={(e) => setCycleAmount(formatInput(e.target.value))}
         />
-
         <input
           className="border p-2 w-32 mr-2"
           placeholder="Cycle Duration"
@@ -175,6 +182,7 @@ export default function AjoSection() {
         <Button onClick={createAjo}>Create</Button>
       </div>
 
+      {/* List of Ajos */}
       <h2 className="text-xl font-bold mb-2">Ajo Groups</h2>
 
       {ajos.map((ajo) => (
@@ -185,19 +193,24 @@ export default function AjoSection() {
           <p>Current Cycle: {ajo.current_cycle}</p>
 
           <div className="mt-2 flex gap-2">
-            {!ajo.joined && ajo.created_by !== user.id && (
-              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>
-                Join
-              </Button>
+            {/* Head / owner: generate invite */}
+            {ajo.created_by === user.id && (
+              <Button onClick={() => generateInviteLink(ajo.id)}>Generate Invite Link</Button>
             )}
 
-            {ajo.joined && (
+            {/* Member: contribute */}
+            {ajo.joined && ajo.created_by !== user.id && (
               <Button
                 onClick={() => contribute(ajo.id, ajo.cycle_amount)}
                 disabled={ajo.payout_due}
               >
                 {ajo.payout_due ? "Payout Due" : "Contribute"}
               </Button>
+            )}
+
+            {/* Non-member: optionally show nothing or join via wallet */}
+            {!ajo.joined && ajo.created_by !== user.id && (
+              <Button onClick={() => joinAjo(ajo.id, ajo.cycle_amount)}>Join</Button>
             )}
           </div>
         </div>
