@@ -141,8 +141,8 @@ wallet_transactions (
 #### **Clone the repo**
 
 ```bash
-git clone https://github.com/your-username/wallet-ajo-demo.git
-cd wallet-ajo-demo
+git clone https://github.com/Full-Stack-Sanctus/Remittra.git
+cd Remittra
 ```
 
 #### **Install dependencies**
@@ -155,9 +155,13 @@ npm install
    Create `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # used server-side only
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+VERCEL_TOKEN
+VERCEL_ORG_ID
+VERCEL_PROJECT_ID
 ```
 
 #### **Initialize Supabase**
@@ -186,7 +190,7 @@ App runs on [http://localhost:3000](http://localhost:3000)
 | Role  | Email                                         | Password | Notes                         |
 | ----- | --------------------------------------------- | -------- | ----------------------------- |
 | Admin | [admin@example.com](admin@demo.com) | Admin123! | KYC verified, can manage Ajos |
-| User  | [user@example.com](user@demo.com)   | password | Regular participant           |
+| User  | [user@example.com](user@demo.com)   | User123! | Regular participant           |
 
 ### All test users exist in Supabase seed/migrations. Admin operations use **service role key** on server-side endpoints.
 
