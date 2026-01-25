@@ -29,3 +29,4 @@ export function getSupabaseServer(): SupabaseClient {
     cookies: cookies() as any,
   });
 }
+
