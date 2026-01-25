@@ -2,28 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
+import UsersSection from "@/components/admin/UsersSection";
+import AjoGroupsSection from "@/components/admin/AjoGroupsSection";
 import Button from "@/components/Button";
 
-// User type
-type UserRow = {
-  id: string;
-  email: string;
-  kyc_verified: boolean;
-};
-
-// Ajo type
-type Contribution = {
-  user_id: string;
-  amount: number;
-  payout_due: boolean;
-};
-
-type AjoRow = {
-  id: string;
-  name: string;
-  current_cycle: number;
-  contributions?: Contribution[]; // present for admins
-};
+// Types
+type UserRow = { id: string; email: string; kyc_verified: boolean };
+type Contribution = { user_id: string; amount: number; payout_due: boolean };
+type AjoRow = { id: string; name: string; current_cycle: number; contributions?: Contribution[] };
 
 export default function AdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -33,7 +19,7 @@ export default function AdminPage() {
   const fetchData = async () => {
     try {
       const session = (await supabaseClient.auth.getSession()).data.session;
-      if (!session) return; // Not logged in
+      if (!session) return;
 
       const [usersRes, ajosRes] = await Promise.all([
         fetch("/api/users").then((r) => r.json()),
@@ -51,9 +37,7 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const refresh = async () => await fetchData();
 
@@ -93,59 +77,14 @@ export default function AdminPage() {
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Admin Panel</h1>
 
-      {/* Users Section */}
       <div className="mb-6">
         <h2 className="font-semibold mb-2">Users</h2>
-        {users.length === 0 && <p>No users found</p>}
-        {users.map((u) => (
-          <div
-            key={u.id}
-            className="border p-2 mb-2 flex justify-between items-center"
-          >
-            <span>{u.email}</span>
-            <span>KYC: {u.kyc_verified ? "✅" : "❌"}</span>
-            <Button onClick={() => toggleKYC(u.id, !u.kyc_verified)}>
-              {u.kyc_verified ? "Unverify" : "Verify"}
-            </Button>
-          </div>
-        ))}
+        <UsersSection users={users} toggleKYC={toggleKYC} />
       </div>
 
-      {/* Ajo Groups Section */}
       <div>
         <h2 className="font-semibold mb-2">Ajo Groups</h2>
-        {ajos.length === 0 && <p>No Ajo groups found</p>}
-
-        {ajos.map((a) => (
-          <div
-            key={a.id}
-            className="border p-2 mb-2 flex flex-col md:flex-row justify-between items-start md:items-center"
-          >
-            <div className="flex flex-col">
-              <span className="font-medium">
-                {a.name} — Cycle {a.current_cycle}
-              </span>
-
-              {/* Show contributions for admins */}
-              {a.contributions && a.contributions.length > 0 ? (
-                <ul className="mt-1 text-sm text-gray-700 space-y-1">
-                  {a.contributions.map((c) => (
-                    <li key={c.user_id}>
-                      User <span className="font-semibold">{c.user_id}</span>:{" "}
-                      ${c.amount} — {c.payout_due ? "Payout Due" : "Not Due"}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500 mt-1">No contributions yet</p>
-              )}
-            </div>
-
-            <Button className="mt-2 md:mt-0" onClick={() => advanceCycle(a.id)}>
-              Advance Cycle
-            </Button>
-          </div>
-        ))}
+        <AjoGroupsSection ajos={ajos} advanceCycle={advanceCycle} />
       </div>
     </div>
   );
