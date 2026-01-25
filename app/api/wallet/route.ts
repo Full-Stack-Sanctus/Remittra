@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const supabaseServer = getSupabaseServer({ req }); // pass req
+    const supabaseServer = getSupabaseServer(); // pass req
 
     // ✅ Get the current logged-in user
     const { data: { user }, error: userError } = await supabaseServer.auth.getUser();
