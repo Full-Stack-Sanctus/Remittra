@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Wallet + Ajo (Rotational Savings) Demo
 
-## Getting Started
+A mini fintech-style **full-stack demo** that implements a **Wallet + Ajo (rotational savings)** system.
+Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstrates how verified users can manage wallet balances, join rotational savings groups, contribute per cycle, and receive payouts in a controlled and secure flow.
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Live Demo:** *(https://remittra-mu.vercel.app)*
+**GitHub Repo:** *(https://github.com/Full-Stack-Sanctus/Remittra)*
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Key Features (Brief)
 
-## Learn More
+* **Authentication & Users**
 
-To learn more about Next.js, take a look at the following resources:
+  * Supabase email/password auth
+  * User profiles with KYC verification flag
+  * Admin role for demo controls
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+* **Wallet**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  * NGN wallet with available & locked balances
+  * Transaction history (deposit, withdrawal)
+  * Balance validation before operations
 
-## Deploy on Vercel
+* **Ajo (Rotational Savings)**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+  * Create and join Ajo groups
+  * Fixed cycle amount & duration
+  * One contribution per cycle
+  * Automatic payout rotation
+  * Manual cycle advancement (admin demo)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* **Admin Controls (Demo)**
+
+  * Verify / unverify KYC
+  * Advance Ajo cycles
+  
+---
+
+### Security Model
+
+* **Supabase Row Level Security (RLS)** enforced on all core tables
+
+  * Users can only read/write their own wallet, contributions, and memberships
+  * Admin-only actions restricted via `is_admin` policies
+
+* **Frontend uses only the public anon key - supabaseClient**
+
+* **Service Role Key is used server-side only** (API routes / server actions) for:
+
+  * Controlled system actions that must bypass RLS safely
+
+* **No service keys are exposed to the client**
+
+---
+
+### Tech Stack
+
+* **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS
+* **Backend / Data:** Supabase (Auth, Postgres, RLS – public schema)
+* **DevOps:** Vercel deployment, GitHub Actions CI
+
+---
+
+### Disclaimer
+
+This is a **technical demo**.
+No real money, payments, or financial integrations are involved.
+A production fintech system would require server-side enforcement, audits, and regulated payment providers.
+
+---
+
+**Built by:** Obasi Sanctus Ebuka
+
