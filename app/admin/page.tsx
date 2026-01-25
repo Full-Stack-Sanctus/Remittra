@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
-import UsersSection from "@/components/admin/UsersSection";
-import AjoGroupsSection from "@/components/admin/AjoGroupsSection";
+import UsersSection from "@/components/admin/UsersSection/UsersSection";
+import AjoGroupsSection from "@/components/admin/AjoGroupsSection/AjoGroupsSection";
 import Button from "@/components/Button";
 
 // Types
