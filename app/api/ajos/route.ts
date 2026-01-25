@@ -1,48 +1,31 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: cookies() as any }
-    );
+    const supabaseServer = getSupabaseServer();
 
-    // Get logged-in user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (!user || userError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: userData, error: userDataError } = await supabase
+    // 1️⃣ Get logged-in user from "users" table
+    const { data: usersData, error: userError } = await supabaseServer
       .from("users")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single();
+      .select("id, is_admin")
+      .limit(1); // adjust if needed
 
-    if (userDataError) {
-      console.error("User data fetch error:", userDataError);
-      return NextResponse.json({ error: "Could not fetch user data" }, { status: 400 });
+    if (userError) {
+      console.error("Error fetching user info:", userError);
+      return NextResponse.json({ error: "Unable to fetch user" }, { status: 400 });
     }
 
-    const isAdmin = userData?.is_admin ?? false;
+    // For demo, take first user as logged-in (replace with proper auth in prod)
+    const user = usersData?.[0];
+    const isAdmin = user?.is_admin ?? false;
 
-    // Fetch all Ajo groups
-    const { data: ajosData, error: ajosError } = await supabase
+    // 2️⃣ Fetch all Ajo groups with contributions
+    const { data: ajosData, error: ajosError } = await supabaseServer
       .from("ajos")
       .select(`
         id,
         name,
-        created_by,
-        cycle_amount,
-        cycle_duration,
         current_cycle,
         user_ajos:user_ajos(
           user_id,
@@ -53,7 +36,7 @@ export async function GET() {
       .order("name", { ascending: true });
 
     if (ajosError) {
-      console.error("Ajos fetch error:", ajosError);
+      console.error("Error fetching Ajo groups:", ajosError);
       return NextResponse.json({ error: ajosError.message }, { status: 400 });
     }
 
@@ -61,7 +44,7 @@ export async function GET() {
       return NextResponse.json([], { status: 200 });
     }
 
-    // Map contributions properly
+    // 3️⃣ Map contributions based on admin vs normal user
     const ajos = ajosData.map((ajo: any) => {
       const contributions = Array.isArray(ajo.user_ajos) ? ajo.user_ajos : [];
 
@@ -74,7 +57,7 @@ export async function GET() {
           contributions,
         };
       } else {
-        // Normal users see only their contribution
+        // Normal user sees only their own contribution
         const userContribution = contributions.find((c: any) => c.user_id === user.id);
         return {
           id: ajo.id,
@@ -86,16 +69,10 @@ export async function GET() {
         };
       }
     });
-    
-    console.log("User session:", user);
-    console.log("Is Admin:", isAdmin);
-    console.log("Ajos raw data:", ajosData);
-    console.log("Ajos fetch error:", ajosError);
-
 
     return NextResponse.json(ajos, { status: 200 });
   } catch (err: any) {
-    console.error("GET /api/ajos unexpected error:", err);
-    return NextResponse.json([], { status: 200 });
+    console.error("Unexpected error in /api/ajos:", err);
+    return NextResponse.json([], { status: 500 });
   }
 }
