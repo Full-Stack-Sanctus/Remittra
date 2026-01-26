@@ -1,10 +1,14 @@
 // app/admin/page.tsx
 import UsersSection from "@/components/admin/UsersSection/UsersSection";
 import AjoGroupsSection from "@/components/admin/AjoGroupsSection/AjoGroupsSection";
+import UserNavbar from "@/components/layout/UserNavbar";
 
 export default function AdminPage() {
   return (
     <div className="p-8 max-w-5xl mx-auto">
+     
+     <UserNavbar />
+     
       <h1 className="text-2xl font-bold mb-8">Admin Control Panel</h1>
 
       <section className="mb-12">
