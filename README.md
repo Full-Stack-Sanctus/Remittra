@@ -46,7 +46,11 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
   
 ---
 
-### Security Model
+* **Security Model (App Router + Supabase)**
+
+  * Admin-only actions restricted via `is_admin` policies
+  * Client → fetch("/api/...")
+  * Server → cookies() + supabase.auth.getUser()
 
 * **Supabase Row Level Security (RLS)** enforced on all core tables
 
