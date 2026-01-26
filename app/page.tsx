@@ -8,10 +8,13 @@ import { useRouter } from "next/navigation";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSignIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
+      
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
@@ -42,6 +45,8 @@ export default function Login() {
     } catch (err: unknown) {
       if (err instanceof Error) alert(err.message);
       else alert("Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,7 +69,10 @@ export default function Login() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <Button onClick={() => handleSignIn(email, password)}>Sign In</Button>
+      <Button onClick={() => handleSignIn(email, password)} disabled={loading}>
+      
+      {loading ? "Signing you in..." : "Sign"}
+      </Button>
 
       {/* ✅ Create Account Link */}
       <p className="mt-4 text-sm">
