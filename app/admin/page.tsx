@@ -4,22 +4,26 @@ import AjoGroupsSection from "@/components/admin/AjoGroupsSection/AjoGroupsSecti
 import UserNavbar from "@/components/layout/UserNavbar";
 
 export default function AdminPage() {
+  
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-     
-     <UserNavbar />
-     
-      <h1 className="text-2xl font-bold mb-8">Admin Control Panel</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* This stays fixed at the top */}
+      <UserNavbar />
 
-      <section className="mb-12">
-        <h2 className="text-lg font-semibold mb-4 text-gray-700">User Management</h2>
+      {/* This scrolls naturally */}
+      <main className="p-4 space-y-6 flex-1">
         <UsersSection />
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold mb-4 text-gray-700">Ajo Group Management</h2>
         <AjoGroupsSection />
-      </section>
+        {/* Add more content here to test the scroll! */}
+        <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+          More Content
+        </div>
+        <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+          More more content...
+        </div>
+      </main>
     </div>
+    
+    
   );
 }
