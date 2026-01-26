@@ -1,4 +1,4 @@
-import AjoSection from "@/components/ajo/AjoSection";
+import AjoSection from "@/components/user/ajo/AjoSection";
 
 export default function AjoPage() {
   return (
