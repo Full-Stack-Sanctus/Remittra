@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     // 2️⃣ Fetch wallet for this user
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
-      .select("available, locked, balance")
+      .select("available, locked_balance, balance")
       .eq("user_id", user.id)
       .single();
 
@@ -26,8 +26,8 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      available: wallet?.available ?? 0,
-      locked: wallet?.locked ?? 0,
+      available: wallet?.balance ?? 0,
+      locked: wallet?.locked_balance ?? 0,
       total: wallet?.balance ?? 0,
     });
   } catch (err) {
