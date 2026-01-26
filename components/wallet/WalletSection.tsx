@@ -26,23 +26,21 @@ export default function WalletSection() {
 
   // 🔹 Fetch wallet for authenticated user
   const fetchWallet = async () => {
-    const session = await supabaseClient.auth.getSession();
-    const token = session.data.session?.access_token;
-    if (!token) return setWallet(EMPTY_WALLET);
+   try {
+    const res = await fetch("/api/wallet", {
+      credentials: "include", // 👈 important
+    });
 
-    try {
-      const res = await fetch("/api/wallet", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    if (!res.ok) throw new Error("Failed to fetch wallet");
 
-      if (!res.ok) throw new Error("Failed to fetch wallet");
-      const data = await res.json();
-      setWallet(data);
-    } catch (err) {
-      console.error("Wallet fetch error:", err);
-      setWallet(EMPTY_WALLET);
+    const data = await res.json();
+    setWallet(data ?? EMPTY_WALLET);
+   } catch (err) {
+    console.error("Wallet fetch error:", err);
+    setWallet(EMPTY_WALLET);
     }
   };
+
 
   useEffect(() => {
     if (user?.id) fetchWallet();
@@ -50,11 +48,11 @@ export default function WalletSection() {
 
   // 🔹 Reset wallet on sign-out
   useEffect(() => {
-    const { data } = supabaseClient.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") setWallet(EMPTY_WALLET);
-      if (event === "SIGNED_IN") fetchWallet();
-    });
-    return () => data.subscription.unsubscribe();
+   const { data } = supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT") setWallet(EMPTY_WALLET);
+    if (event === "SIGNED_IN") fetchWallet();
+   });
+   return () => data.subscription.unsubscribe();
   }, []);
 
   if (loading) return <div className="p-4">Loading...</div>;
