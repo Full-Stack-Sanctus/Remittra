@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
     const isDbAdmin = profile?.is_admin === true;
 
     if (!isSystemAdmin && !isDbAdmin) {
-      return NextResponse.redirect(new URL("/user", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
