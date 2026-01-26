@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     // 2️⃣ Fetch wallet for this user
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
-      .select("balance, locked_balance, balance")
+      .select("total, locked_balance, balance")
       .eq("user_id", user.id)
       .single();
 
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       balance: wallet?.balance ?? 0,
       locked: wallet?.locked_balance ?? 0,
-      total: wallet?.balance ?? 0,
+      total: wallet?.total ?? 0,
     });
   } catch (err) {
     console.error("GET /api/wallet unexpected error:", err);

@@ -82,9 +82,9 @@ export default function WalletSection() {
       // Update wallet from server response
       
       setWallet({
-      balance: data.newBalance, 
-      total: data.newBalance, // Or whatever fields your API returned
-      locked: wallet.locked 
+      balance: data.balance, 
+      total: data.newTotalBalance, // Or whatever fields your API returned
+      locked: data.locked 
       
     });
     } catch (err) {
@@ -127,7 +127,7 @@ export default function WalletSection() {
     <div className="border p-4 mb-6">
       <h1 className="text-xl font-bold mb-4">My Wallet</h1>
 
-      <p>Total Balance: ₦{wallet.balance}</p>
+      <p>Total Balance: ₦{wallet.total}</p>
       <p>Available Balance: ₦{wallet.balance}</p>
       <p>Locked in Ajo: ₦{wallet.locked}</p>
 

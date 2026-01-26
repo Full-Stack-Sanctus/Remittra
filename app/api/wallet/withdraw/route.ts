@@ -33,14 +33,16 @@ export async function POST(req: Request) {
 
     const { data: updatedWallet } = await supabaseServer
       .from("wallets")
-      .update({ balance: wallet.balance + value })
+      .update({ total: wallet.total + value })
       .eq("id", wallet.id)
       .select()
       .single();
 
     return NextResponse.json({
       ok: true,
-      newBalance: updatedWallet.balance,
+      newTotalBalance: updatedWallet.total,
+      balance: updatedWallet.balance,
+      locked: updatedWallet.locked_balance
     });
   } catch (err) {
     console.error("POST /api/wallet:", err);
