@@ -6,7 +6,7 @@ export async function GET(req: Request) {
     const supabase = await getSupabaseServer();  // pass req
 
     // ✅ Get the current logged-in user
-    const { data: { user }, error: userError } = await supabaseServer.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
       console.error("Error fetching user:", userError);
