@@ -48,11 +48,11 @@ export async function POST(req: Request) {
     }
 
     // Update wallet
-    const newBalance = wallet.balance + amt;
+    const newBalance = wallet.total + amt;
 
     const { data: updatedWallet, error: updateError } = await supabase
       .from("wallets")
-      .update({ balance: newBalance })
+      .update({ total: newBalance })
       .eq("id", wallet.id)
       .select("balance")
       .single();
@@ -66,7 +66,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      newBalance: updatedWallet.balance,
+      newTotalBalance: updatedWallet.total,
+      newTotalBalance: updatedWallet.total,
+      locked: updatedWallet.locked_balance
     });
   } catch (err) {
     console.error("Deposit error:", err);
