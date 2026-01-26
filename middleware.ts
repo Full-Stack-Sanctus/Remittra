@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
 
   // 2. If not logged in and trying to access protected routes, send to login
   if (!user && (isAdminPath || isUserPath)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   // 3. If logged in, fetch the role from the database
