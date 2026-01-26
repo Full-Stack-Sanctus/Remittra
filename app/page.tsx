@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseClient } from "../lib/supabaseClient";
-import Button from "../components/Button";
+import { supabaseClient } from "@/lib/supabaseClient";
+import Button from "@/components/Button";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
@@ -16,11 +16,9 @@ export default function Login() {
         email,
         password,
       });
-
       if (error) throw error;
       if (!data.user) return;
 
-      // Wait for session to be ready
       const { data: sessionData, error: sessionError } =
         await supabaseClient.auth.getSession();
       if (sessionError) throw sessionError;
@@ -29,7 +27,6 @@ export default function Login() {
         return;
       }
 
-      // Fetch user role
       const { data: userData, error: userError } = await supabaseClient
         .from("users")
         .select("id, is_admin, kyc_verified")
@@ -39,22 +36,12 @@ export default function Login() {
       if (userError || !userData)
         throw userError ?? new Error("User not found");
 
-      // Redirect based on role
-      if (userData.is_admin) {
-        router.push("/admin");
-      } else if (userData.kyc_verified) {
-        router.push("/user");
-      } else {
-        alert("Your account is not KYC-verified yet.");
-      }
+      if (userData.is_admin) router.push("/admin");
+      else if (userData.kyc_verified) router.push("/user");
+      else alert("Your account is not KYC-verified yet.");
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error("Login error:", err);
-        alert(err.message);
-      } else {
-        console.error("Login error:", err);
-        alert("Login failed");
-      }
+      if (err instanceof Error) alert(err.message);
+      else alert("Login failed");
     }
   };
 
@@ -78,6 +65,17 @@ export default function Login() {
       />
 
       <Button onClick={() => handleSignIn(email, password)}>Sign In</Button>
+
+      {/* ✅ Create Account Link */}
+      <p className="mt-4 text-sm">
+        Don’t have an account?{" "}
+        <button
+          onClick={() => router.push("/signup")}
+          className="text-blue-600 underline"
+        >
+          Create one
+        </button>
+      </p>
     </div>
   );
 }
