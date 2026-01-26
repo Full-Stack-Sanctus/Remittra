@@ -1,5 +1,5 @@
-import WalletSection from "@/components/wallet/WalletSection";
-import AjoSection from "@/components/ajo/AjoSection";
+import WalletSection from "@/components/user/wallet/WalletSection";
+import AjoSection from "@/components/user/ajo/AjoSection";
 import UserNavbar from "@/components/layout/UserNavbar";
 
 

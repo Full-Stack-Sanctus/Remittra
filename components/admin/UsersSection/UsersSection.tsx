@@ -1,36 +1,68 @@
+// components/admin/UsersSection/UsersSection.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import Button from "@/components/Button";
 
-// User type
-type UserRow = {
-  id: string;
-  email: string;
-  kyc_verified: boolean;
-};
+type UserRow = { id: string; email: string; kyc_verified: boolean };
 
-type UsersSectionProps = {
-  users: UserRow[];
-  toggleKYC: (id: string, verified: boolean) => void;
-};
+export default function UsersSection() {
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function UsersSection({ users, toggleKYC }: UsersSectionProps) {
-  if (users.length === 0) return <p>No users found</p>;
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchUsers(); }, []);
+
+  const toggleKYC = async (id: string, verified: boolean) => {
+    try {
+      const res = await fetch("/api/admin/toggle-kyc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id, verified }),
+      });
+      if (res.ok) fetchUsers();
+    } catch (err) {
+      alert("Error toggling KYC");
+    }
+  };
+
+  if (loading) return <div>Loading users...</div>;
 
   return (
-    <div>
-      {users.map((u) => (
-        <div
-          key={u.id}
-          className="border p-2 mb-2 flex justify-between items-center"
-        >
-          <span>{u.email}</span>
-          <span>KYC: {u.kyc_verified ? "✅" : "❌"}</span>
-          <Button onClick={() => toggleKYC(u.id, !u.kyc_verified)}>
-            {u.kyc_verified ? "Unverify" : "Verify"}
-          </Button>
-        </div>
-      ))}
+    <div className="border rounded-lg overflow-hidden">
+      <table className="min-w-full bg-white">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-2 text-left">Email</th>
+            <th className="px-4 py-2 text-left">Status</th>
+            <th className="px-4 py-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.id} className="border-t">
+              <td className="px-4 py-2">{user.email}</td>
+              <td className="px-4 py-2">{user.kyc_verified ? "✅" : "❌"}</td>
+              <td className="px-4 py-2 text-right">
+                <Button onClick={() => toggleKYC(user.id, !user.kyc_verified)}>
+                  {user.kyc_verified ? "Revoke" : "Verify"}
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

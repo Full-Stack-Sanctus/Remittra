@@ -1,63 +1,53 @@
+// components/admin/AjoGroupsSection/AjoGroupsSection.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import Button from "@/components/Button";
 
-// Types
-type Contribution = {
-  user_id: string;
-  amount: number;
-  payout_due: boolean;
-};
+type AjoRow = { id: string; name: string; current_cycle: number };
 
-type AjoRow = {
-  id: string;
-  name: string;
-  current_cycle: number;
-  contributions?: Contribution[];
-};
+export default function AjoGroupsSection() {
+  const [ajos, setAjos] = useState<AjoRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-type AjoGroupsSectionProps = {
-  ajos: AjoRow[];
-  advanceCycle: (ajoId: string) => void;
-};
+  const fetchAjos = async () => {
+    try {
+      const res = await fetch("/api/ajos");
+      const data = await res.json();
+      setAjos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch Ajos", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-export default function AjoGroupsSection({ ajos, advanceCycle }: AjoGroupsSectionProps) {
-  if (ajos.length === 0) {
-    return <p className="text-gray-500">No Ajo groups found</p>;
-  }
+  useEffect(() => { fetchAjos(); }, []);
+
+  const advanceCycle = async (ajoId: string) => {
+    try {
+      const res = await fetch("/api/admin/advance-cycle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ajoId }),
+      });
+      if (res.ok) fetchAjos();
+    } catch (err) {
+      alert("Error advancing cycle");
+    }
+  };
+
+  if (loading) return <div>Loading Ajo groups...</div>;
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4">
       {ajos.map((ajo) => (
-        <div
-          key={ajo.id}
-          className="border p-4 rounded-lg shadow-sm hover:shadow-md transition flex flex-col md:flex-row justify-between items-start md:items-center"
-        >
-          {/* Left content: Ajo info */}
-          <div className="flex flex-col">
-            <span className="font-semibold text-lg">
-              {ajo.name} — Cycle {ajo.current_cycle}
-            </span>
-
-            {/* Contributions list */}
-            {ajo.contributions && ajo.contributions.length > 0 ? (
-              <ul className="mt-2 text-sm text-gray-700 space-y-1">
-                {ajo.contributions.map((c) => (
-                  <li key={c.user_id}>
-                    <span className="font-medium">User {c.user_id}</span>: ${c.amount} —{" "}
-                    {c.payout_due ? "Payout Due" : "Not Due"}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-gray-500">No contributions yet</p>
-            )}
+        <div key={ajo.id} className="p-4 border rounded-lg flex justify-between items-center shadow-sm">
+          <div>
+            <p className="font-bold">{ajo.name}</p>
+            <p className="text-sm text-gray-500">Cycle: {ajo.current_cycle}</p>
           </div>
-
-          {/* Right content: Button */}
-          <div className="mt-3 md:mt-0 md:ml-4">
-            <Button onClick={() => advanceCycle(ajo.id)}>Advance Cycle</Button>
-          </div>
+          <Button onClick={() => advanceCycle(ajo.id)}>Advance</Button>
         </div>
       ))}
     </div>
