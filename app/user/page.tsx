@@ -2,13 +2,25 @@ import WalletSection from "@/components/wallet/WalletSection";
 import AjoSection from "@/components/ajo/AjoSection";
 import UserNavbar from "@/components/layout/UserNavbar";
 
+
 export default function UserPage() {
   return (
-    <div className="p-4 space-y-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* This stays fixed at the top */}
       <UserNavbar />
-      
-      <WalletSection />
-      <AjoSection />
+
+      {/* This scrolls naturally */}
+      <main className="p-4 space-y-6 flex-1">
+        <WalletSection />
+        <AjoSection />
+        {/* Add more content here to test the scroll! */}
+        <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+          Scroll down to see the Navbar stay put
+        </div>
+        <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+          More content...
+        </div>
+      </main>
     </div>
   );
 }

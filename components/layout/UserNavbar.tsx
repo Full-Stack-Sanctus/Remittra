@@ -1,10 +1,30 @@
-// components/layout/Navbar.tsx
+// components/layout/UserNavbar.tsx
 "use client";
 import { useState } from "react";
 import { Menu, X, UserCircle, Settings, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation"; // To redirect after logout
+import { supabaseClient } from "@/lib/supabaseClient";
+
 
 export default function UserNavbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  
+  const session = (await supabaseClient.auth.getSession()).data.session;
+      if (!session) return;
+  
+  const handleLogout = async () => {
+    const { error } = await session.auth.signOut();
+    
+    if (error) {
+      console.error("Error logging out:", error.message);
+    } else {
+      // Clear state and redirect to login page
+      setIsOpen(false);
+      router.push("/login"); 
+      router.refresh(); // Clears any cached server-side data
+    }
+  };
 
   return (
     // 'sticky top-0' keeps it at the top, 'z-50' keeps it above content
@@ -33,7 +53,7 @@ export default function UserNavbar() {
               <Settings size={18} /> Settings
             </li>
             <hr className="my-1 border-gray-100" />
-            <li className="px-4 py-3 hover:bg-red-50 text-red-600 flex items-center gap-3 cursor-pointer">
+            <li onClick={handleLogout} className="px-4 py-3 hover:bg-red-50 text-red-600 flex items-center gap-3 cursor-pointer">
               <LogOut size={18} /> Logout
             </li>
           </ul>
