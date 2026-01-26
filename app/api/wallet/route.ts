@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     }
 
     // 2️⃣ Fetch wallet for this user
-    const { data: wallet, error: walletError } = await supabaseServer
+    const { data: wallet, error: walletError } = await supabase
       .from("wallets")
       .select("available, locked, balance")
       .eq("user_id", user.id)
