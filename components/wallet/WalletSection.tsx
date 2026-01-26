@@ -80,8 +80,13 @@ export default function WalletSection() {
 
       const data = await res.json();
       // Update wallet from server response
-      setWallet((w) => ({ ...w, available: data.newBalance, total: data.newBalance }));
-      setAmount("");
+      
+      setWallet({
+      available: data.newBalance, 
+      total: data.newBalance, // Or whatever fields your API returned
+      locked: wallet.locked 
+      
+    });
     } catch (err) {
       console.error("Deposit error:", err);
       alert("Deposit failed");
