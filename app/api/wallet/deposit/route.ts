@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const supabase = getSupabaseServer();
+    const supabase = await getSupabaseServer();
 
     // ✅ Auth via cookies
     const { data: { user }, error } = await supabase.auth.getUser();
