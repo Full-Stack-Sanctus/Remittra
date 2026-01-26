@@ -1,6 +1,7 @@
 import { getSupabaseServer } from "../lib/supabaseServer";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 
+// 1. Get the Supabase client (Ensure your helper uses the SERVICE_ROLE_KEY for seeding)
 const supabase = await getSupabaseServer();
 
 // Pull admin email from env or fallback to demo
@@ -17,25 +18,58 @@ type AppUserInsert = {
 
 type WalletInsert = {
   user_id: string;
-  total: number;         // ✅ Use 'total' instead of 'balance'
-  locked_balance: number; // ✅ Added this to be explicit
+  total: number;
+  locked_balance: number;
 };
-
-// ... (other types stay the same)
 
 /* ----------------------------- Helpers ----------------------------- */
 
-// (getOrCreateAuthUser helper stays the same)
+/**
+ * restored helper to find or create auth users
+ */
+async function getOrCreateAuthUser(
+  email: string,
+  password: string,
+): Promise<string> {
+  // Try to create the user via Admin Auth API
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  // If successful creation
+  if (data?.user?.id) {
+    return data.user.id;
+  }
+
+  // If user exists (error code usually 'email_exists'), fetch them
+  const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
+
+  if (listError || !listData) {
+    throw listError ?? new Error("Failed to list auth users");
+  }
+
+  const existingUser = listData.users.find((u) => u.email === email);
+
+  if (!existingUser) {
+    throw new Error(`Auth user not found for ${email} and could not be created.`);
+  }
+
+  return existingUser.id;
+}
 
 /* ----------------------------- Seeder ----------------------------- */
 
 async function seed(): Promise<void> {
   try {
-    // ---- AUTH USERS ----
+    console.log("🚀 Starting seed...");
+
+    // ---- 1. AUTH USERS ----
     const adminId = await getOrCreateAuthUser(ADMIN_EMAIL, "Admin123!");
     const userId = await getOrCreateAuthUser("user@demo.com", "User123!");
 
-    // ---- APP USERS ----
+    // ---- 2. APP USERS (public.users table) ----
     const users: AppUserInsert[] = [
       {
         id: adminId,
@@ -51,10 +85,11 @@ async function seed(): Promise<void> {
       },
     ];
 
-    await supabase.from("users").upsert(users);
+    const { error: userErr } = await supabase.from("users").upsert(users);
+    if (userErr) throw userErr;
 
-    // ---- WALLETS ----
-    // ⚠️ CRITICAL: Do NOT insert into 'balance'. Insert into 'total'.
+    // ---- 3. WALLETS (public.wallets table) ----
+    // Note: 'balance' is a generated column, so we only touch 'total'
     const wallets: WalletInsert[] = [
       { 
         user_id: adminId, 
@@ -74,12 +109,9 @@ async function seed(): Promise<void> {
 
     if (walletErr) throw walletErr;
 
-    // ---- AJOS ----
-    // ... (rest of the Ajo seeding logic is fine as long as table names match)
-
     console.log("✅ Seeding complete");
-  } catch (error) {
-    console.error("❌ Seeder failed:", error);
+  } catch (error: any) {
+    console.error("❌ Seeder failed:", error.message);
     process.exit(1);
   }
 }
