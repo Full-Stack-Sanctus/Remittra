@@ -1,12 +1,12 @@
 // /app/api/deposit/route.ts (or your specific route path)
 import { withAuth } from "@/lib/withAuth";
-import { getSupabaseServer } from "@/lib/supabaseServer";
+import { getSupabaseServer } from "@/lib/supabaseServerClient";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   return withAuth(req, async (user) => {
     // 1. Await the server client to ensure session/cookies are captured
-    const supabaseServer = await getSupabaseServer();
+    const supabase = await getSupabaseServer();
     
     try {
       const body = await req.json();
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       }
 
       // 2. Fetch the wallet
-      const { data: wallet, error: walletError } = await supabaseServer
+      const { data: wallet, error: walletError } = await supabase
         .from("wallets")
         .select("*")
         .eq("user_id", user.id)
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       }
 
       // 3. Record the transaction
-      const { error: txError } = await supabaseServer
+      const { error: txError } = await supabase
         .from("wallet_transactions")
         .insert({ 
           user_id: user.id, 
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       // 4. Update the wallet balance
       const newBalance = wallet.balance + amount;
       
-      const { data: updatedWallet, error: updateError } = await supabaseServer
+      const { data: updatedWallet, error: updateError } = await supabase
         .from("wallets")
         .update({ balance: newBalance })
         .eq("id", wallet.id)
