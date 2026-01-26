@@ -82,7 +82,7 @@ export default function WalletSection() {
       // Update wallet from server response
       
       setWallet({
-      available: data.newBalance, 
+      balance: data.newBalance, 
       total: data.newBalance, // Or whatever fields your API returned
       locked: wallet.locked 
       
@@ -96,7 +96,7 @@ export default function WalletSection() {
   // 🔹 Withdraw
   const withdraw = async () => {
     const amt = Number(amount);
-    if (amt <= 0 || amt > wallet.available) return alert("Cannot withdraw more than available balance");
+    if (amt <= 0 || amt > wallet.balance) return alert("Cannot withdraw more than available balance");
 
 
     try {
@@ -115,7 +115,7 @@ export default function WalletSection() {
       }
 
       const data = await res.json();
-      setWallet((w) => ({ ...w, available: data.newBalance, total: data.newBalance }));
+      setWallet((w) => ({ ...w, balance: data.newBalance, total: data.newBalance }));
       setAmount("");
     } catch (err) {
       console.error("Withdrawal error:", err);
@@ -128,7 +128,7 @@ export default function WalletSection() {
       <h1 className="text-xl font-bold mb-4">My Wallet</h1>
 
       <p>Total Balance: ₦{wallet.balance}</p>
-      <p>Available Balance: ₦{wallet.available}</p>
+      <p>Available Balance: ₦{wallet.balance}</p>
       <p>Locked in Ajo: ₦{wallet.locked}</p>
 
       <div className="flex items-center mt-2">
