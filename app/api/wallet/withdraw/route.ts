@@ -47,6 +47,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       newTotalBalance: updatedWallet.total,
+      balance: updatedWallet.balance,
       locked: updatedWallet.locked_balance
     });
   } catch (err) {

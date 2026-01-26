@@ -115,7 +115,7 @@ export default function WalletSection() {
       }
 
       const data = await res.json();
-      setWallet((w) => ({ ...w, balance: data.newBalance, total: data.newBalance }));
+      setWallet((w) => ({ ...w, balance: data.balance, total: data.newTotalBalance, locked: data.locked }));
       setAmount("");
     } catch (err) {
       console.error("Withdrawal error:", err);
