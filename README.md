@@ -222,6 +222,14 @@ App runs on [http://localhost:3000](http://localhost:3000)
 
 ---
 
+## Assumptions
+
+This demo logic was implemented manually but using Supabase Edge Functions is assumed to be faster, easier to maintain, and more secure than implementing equivalent logic manually, especially when leveraging RLS and service role keys.
+
+Real-world financial applications would require additional server-side validation and payment provider integration.
+
+---
+
 **Built by:** Obasi Sanctus Ebuka
 
 ---
