@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      available: wallet?.balance ?? 0,
+      balance: wallet?.balance ?? 0,
       locked: wallet?.locked_balance ?? 0,
       total: wallet?.balance ?? 0,
     });
