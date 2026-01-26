@@ -11,40 +11,44 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSignIn = async (email: string, password: string) => {
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevents page refresh if used in a <form>
+    
     try {
       setLoading(true);
-      
+
+      // 1. Authenticate with Supabase
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
       });
+
       if (error) throw error;
       if (!data.user) return;
 
-      const { data: sessionData, error: sessionError } =
-        await supabaseClient.auth.getSession();
-      if (sessionError) throw sessionError;
-      if (!sessionData?.session) {
-        alert("Session not established. Try again.");
-        return;
-      }
-
+      // 2. Fetch user role to determine initial direction
+      // Note: Middleware handles the actual security, this is just for UX
       const { data: userData, error: userError } = await supabaseClient
         .from("users")
-        .select("id, is_admin, kyc_verified")
+        .select("is_admin, kyc_verified")
         .eq("id", data.user.id)
         .single();
 
-      if (userError || !userData)
-        throw userError ?? new Error("User not found");
+      if (userError || !userData) throw new Error("Profile not found.");
 
-      if (userData.is_admin) router.push("/admin");
-      else if (userData.kyc_verified) router.push("/user");
-      else alert("Your account is not KYC-verified yet.");
-    } catch (err: unknown) {
-      if (err instanceof Error) alert(err.message);
-      else alert("Login failed");
+      // 3. Optimized Redirect Logic
+      if (userData.is_admin) {
+        router.push("/admin");
+      } else if (userData.kyc_verified) {
+        router.push("/user");
+      } else {
+        // You might want a specific /pending or /kyc page here
+        alert("Your account is awaiting KYC verification.");
+        router.push("/user"); 
+      }
+
+    } catch (err: any) {
+      alert(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -52,38 +56,45 @@ export default function Login() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1 className="text-2xl font-bold mb-4">Login</h1>
+      <form 
+        onSubmit={handleSignIn} 
+        className="flex flex-col w-full max-w-xs gap-4"
+      >
+        <h1 className="text-2xl font-bold mb-4 text-center">Login</h1>
 
-      <input
-        className="border p-2 mb-2 w-full max-w-xs"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <input
+          className="border p-2 w-full"
+          placeholder="Email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-      <input
-        className="border p-2 mb-4 w-full max-w-xs"
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <input
+          className="border p-2 w-full"
+          type="password"
+          placeholder="Password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-      <Button onClick={() => handleSignIn(email, password)} disabled={loading}>
-      
-      {loading ? "Signing you in..." : "Sign"}
-      </Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? "Signing you in..." : "Sign In"}
+        </Button>
 
-      {/* ✅ Create Account Link */}
-      <p className="mt-4 text-sm">
-        Don’t have an account?{" "}
-        <button
-          onClick={() => router.push("/signup")}
-          className="text-blue-600 underline"
-        >
-          Create one
-        </button>
-      </p>
+        <p className="mt-2 text-sm text-center">
+          Don’t have an account?{" "}
+          <button
+            type="button"
+            onClick={() => router.push("/signup")}
+            className="text-blue-600 underline"
+          >
+            Create one
+          </button>
+        </p>
+      </form>
     </div>
   );
 }

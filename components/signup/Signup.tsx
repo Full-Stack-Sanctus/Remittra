@@ -66,7 +66,7 @@ export default function Signup() {
       if (profileError) throw profileError;
 
       alert("Signup successful! Please log in.");
-      router.push("/login");
+      router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error("Signup error:", err);
