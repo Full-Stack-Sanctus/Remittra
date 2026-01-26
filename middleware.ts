@@ -1,4 +1,3 @@
-// middleware.ts
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -20,17 +19,20 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // Use getUser() for security - it validates the JWT against Supabase Auth
   const { data: { user } } = await supabase.auth.getUser();
   const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
 
   if (isAdminPath) {
-    // 1. If not logged in at all, redirect to login
-    if (!user) return NextResponse.redirect(new URL("/", request.url));
+    // 1. Not logged in? Redirect to login
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
 
-    // 2. Check if email matches the Admin Env Variable
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    // 2. Security Check: Compare against Private Env Variable and Database
+    // Note: Removed NEXT_PUBLIC_ for server-side security
+    const adminEmail = process.env.ADMIN_EMAIL; 
     
-    // Check both the ENV email AND the database 'is_admin' flag for double security
     const { data: profile } = await supabase
       .from("users")
       .select("is_admin")
@@ -40,10 +42,26 @@ export async function middleware(request: NextRequest) {
     const isSystemAdmin = user.email === adminEmail;
     const isDbAdmin = profile?.is_admin === true;
 
+    // If they fail BOTH checks, they are definitely not an admin
     if (!isSystemAdmin && !isDbAdmin) {
-      return NextResponse.redirect(new URL("/", request.url));
+      console.warn(`Unauthorized admin access attempt by ${user.email}`);
+      return NextResponse.redirect(new URL("/user", request.url));
     }
   }
 
   return response;
+}
+
+// Ensure middleware only runs on relevant routes to save performance
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 }

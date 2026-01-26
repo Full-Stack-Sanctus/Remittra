@@ -179,7 +179,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 VERCEL_TOKEN
 VERCEL_ORG_ID
 VERCEL_PROJECT_ID
-NEXT_PUBLIC_ADMIN_EMAIL  // use this in my middleware to checkmate user and admin login 
+ADMIN_EMAIL  // use this in my middleware to checkmate user and admin login 
 ```
 
 #### **Initialize Supabase**
