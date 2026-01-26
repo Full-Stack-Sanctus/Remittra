@@ -1,4 +1,4 @@
-import WalletSection from "@/components/wallet/WalletSection";
+import WalletSection from "@/components/user/wallet/WalletSection";
 
 export default function WalletPage() {
   return (
