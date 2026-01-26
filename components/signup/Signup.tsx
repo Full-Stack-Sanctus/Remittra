@@ -58,6 +58,7 @@ export default function Signup() {
         .from("users")
         .insert({
           id: data.user.id,
+          email: email,
           full_name: name,
           is_admin: false,
           kyc_verified: false,
