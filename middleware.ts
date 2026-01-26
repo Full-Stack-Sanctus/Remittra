@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
 
   if (isAdminPath) {
     // 1. If not logged in at all, redirect to login
-    if (!user) return NextResponse.redirect(new URL("/login", request.url));
+    if (!user) return NextResponse.redirect(new URL("/", request.url));
 
     // 2. Check if email matches the Admin Env Variable
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
