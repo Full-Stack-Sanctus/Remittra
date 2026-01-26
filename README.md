@@ -46,6 +46,8 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
   
 ---
 
+### Security
+
 * **Security Model (App Router + Supabase)**
 
   * Admin-only actions restricted via `is_admin` policies
