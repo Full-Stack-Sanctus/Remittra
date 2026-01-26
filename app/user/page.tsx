@@ -15,10 +15,10 @@ export default function UserPage() {
         <AjoSection />
         {/* Add more content here to test the scroll! */}
         <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-          Scroll down to see the Navbar stay put
+          More Content
         </div>
         <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-          More content...
+          More more content...
         </div>
       </main>
     </div>
