@@ -127,7 +127,7 @@ export default function WalletSection() {
     <div className="border p-4 mb-6">
       <h1 className="text-xl font-bold mb-4">My Wallet</h1>
 
-      <p>Total Balance: ₦{wallet.total}</p>
+      <p>Total Balance: ₦{wallet.balance}</p>
       <p>Available Balance: ₦{wallet.available}</p>
       <p>Locked in Ajo: ₦{wallet.locked}</p>
 
