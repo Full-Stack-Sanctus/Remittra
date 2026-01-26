@@ -143,6 +143,7 @@ on users
 for insert
 with check (is_admin = false);
 ```
+---
 
 ### Tech Stack
 
