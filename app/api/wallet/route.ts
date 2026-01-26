@@ -10,19 +10,19 @@ export async function GET(req: Request) {
 
     if (userError || !user) {
       console.error("Error fetching user:", userError);
-      return NextResponse.json({ available: 0, locked: 0, total: 0 });
+      return NextResponse.json({ balance: 0, locked: 0, total: 0 });
     }
 
     // 2️⃣ Fetch wallet for this user
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
-      .select("available, locked_balance, balance")
+      .select("balance, locked_balance, balance")
       .eq("user_id", user.id)
       .single();
 
     if (walletError) {
       console.error("Wallet fetch error:", walletError);
-      return NextResponse.json({ available: 0, locked: 0, total: 0 });
+      return NextResponse.json({ balance: 0, locked: 0, total: 0 });
     }
 
     return NextResponse.json({
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error("GET /api/wallet unexpected error:", err);
-    return NextResponse.json({ available: 0, locked: 0, total: 0 }, { status: 500 });
+    return NextResponse.json({ balance: 0, locked: 0, total: 0 }, { status: 500 });
   }
 }
 
