@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
     // If they fail BOTH checks, they are definitely not an admin
     if (!isSystemAdmin && !isDbAdmin) {
       console.warn(`Unauthorized admin access attempt by ${user.email}`);
-      return NextResponse.redirect(new URL("/user", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
