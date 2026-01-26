@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseClient } from "../lib/supabaseClient";
-import Button from "../components/Button";
+import { supabaseClient } from "@/lib/supabaseClient";
+import Button from "@/components/Button";
 import { useRouter } from "next/navigation";
 
 export default function Signup() {
