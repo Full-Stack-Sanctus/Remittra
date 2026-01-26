@@ -19,49 +19,52 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Use getUser() for security - it validates the JWT against Supabase Auth
+  // 1. Get the current user
   const { data: { user } } = await supabase.auth.getUser();
-  const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
 
-  if (isAdminPath) {
-    // 1. Not logged in? Redirect to login
-    if (!user) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  const url = request.nextUrl.clone();
+  const isAdminPath = url.pathname.startsWith("/admin");
+  const isUserPath = url.pathname.startsWith("/user");
 
-    // 2. Security Check: Compare against Private Env Variable and Database
-    // Note: Removed NEXT_PUBLIC_ for server-side security
-    const adminEmail = process.env.ADMIN_EMAIL; 
-    
+  // 2. If not logged in and trying to access protected routes, send to login
+  if (!user && (isAdminPath || isUserPath)) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // 3. If logged in, fetch the role from the database
+  if (user) {
     const { data: profile } = await supabase
       .from("users")
       .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    const isSystemAdmin = user.email === adminEmail;
-    const isDbAdmin = profile?.is_admin === true;
+    // Cross-check: Is this the system admin (env) or a DB admin?
+    const adminEmail = process.env.ADMIN_EMAIL; // Use private env for security
+    const isActuallyAdmin = user.email === adminEmail || profile?.is_admin === true;
 
-    // If they fail BOTH checks, they are definitely not an admin
-    if (!isSystemAdmin && !isDbAdmin) {
-      console.warn(`Unauthorized admin access attempt by ${user.email}`);
-      return NextResponse.redirect(new URL("/", request.url));
+    // 🛡️ REVERSE PROTECTION LOGIC
+    
+    // Case A: User is an Admin but trying to access /user dashboard
+    if (isActuallyAdmin && isUserPath) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+
+    // Case B: User is NOT an Admin but trying to access /admin dashboard
+    if (!isActuallyAdmin && isAdminPath) {
+      return NextResponse.redirect(new URL("/user", request.url));
+    }
+    
+    // Case C: Logged in users shouldn't see the login page
+    if (url.pathname === "/") {
+       return NextResponse.redirect(new URL(isActuallyAdmin ? "/admin" : "/user", request.url));
     }
   }
 
   return response;
 }
 
-// Ensure middleware only runs on relevant routes to save performance
+// Ensure middleware only runs on dashboard paths
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
-}
+  matcher: ["/admin/:path*", "/user/:path*", "/"],
+};
