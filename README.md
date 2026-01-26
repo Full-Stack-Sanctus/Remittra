@@ -134,6 +134,16 @@ wallet_transactions (
 
 ---
 
+### Policies
+
+```sql
+-- Only allow insert with is_admin = false
+create policy "users_insert_default_admin_false"
+on users
+for insert
+with check (is_admin = false);
+```
+
 ### Tech Stack
 
 * **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS
@@ -168,6 +178,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 VERCEL_TOKEN
 VERCEL_ORG_ID
 VERCEL_PROJECT_ID
+NEXT_PUBLIC_ADMIN_EMAIL  // use this in my middleware to checkmate user and admin login 
 ```
 
 #### **Initialize Supabase**
