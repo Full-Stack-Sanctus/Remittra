@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     const { data: updatedWallet } = await supabase
       .from("wallets")
-      .update({ total: supabaseServer.rpc('increment', { x: value }) })
+      .update({ total: supabase.rpc('increment', { x: value }) })
       .eq("id", wallet.id)
       .select()
       .single();
