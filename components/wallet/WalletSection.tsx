@@ -6,13 +6,13 @@ import { useUser } from "@/hooks/useUser";
 import Button from "@/components/Button";
 
 type Wallet = {
-  available: number;
+  balance: number;
   locked: number;
   total: number;
 };
 
 const EMPTY_WALLET: Wallet = {
-  available: 0,
+  balance: 0,
   locked: 0,
   total: 0,
 };
