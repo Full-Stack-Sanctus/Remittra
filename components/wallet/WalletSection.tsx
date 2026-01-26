@@ -63,17 +63,13 @@ export default function WalletSection() {
     const amt = Number(amount);
     if (amt <= 0) return alert("Enter a valid amount");
 
-    const session = await supabaseClient.auth.getSession();
-    const token = session.data.session?.access_token;
-    if (!token) return alert("Not signed in");
-
     try {
       const res = await fetch("/api/wallet/deposit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ amount: amt }),
       });
 
@@ -97,17 +93,14 @@ export default function WalletSection() {
     const amt = Number(amount);
     if (amt <= 0 || amt > wallet.available) return alert("Cannot withdraw more than available balance");
 
-    const session = await supabaseClient.auth.getSession();
-    const token = session.data.session?.access_token;
-    if (!token) return alert("Not signed in");
 
     try {
       const res = await fetch("/api/wallet/withdraw", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ amount: amt }),
       });
 
