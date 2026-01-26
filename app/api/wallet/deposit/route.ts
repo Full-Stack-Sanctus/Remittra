@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       .from("wallets")
       .update({ total: newBalance })
       .eq("id", wallet.id)
-      .select("balance")
+      .select("total")
       .single();
 
     if (updateError || !updatedWallet) {
