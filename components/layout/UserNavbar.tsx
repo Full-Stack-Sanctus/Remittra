@@ -21,7 +21,7 @@ export default function UserNavbar() {
     } else {
       // Clear state and redirect to login page
       setIsOpen(false);
-      router.push("/login"); 
+      router.push("/"); 
       router.refresh(); // Clears any cached server-side data
     }
   };
