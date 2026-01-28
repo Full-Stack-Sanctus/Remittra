@@ -207,8 +207,8 @@ App runs on [http://localhost:3000](http://localhost:3000)
 
 | Role  | Email                                         | Password | Notes                         |
 | ----- | --------------------------------------------- | -------- | ----------------------------- |
-| Admin | [admin@example.com](admin@demo.com) | Admin123! | KYC verified, can manage Ajos |
-| User  | [user@example.com](user@demo.com)   | User123! | Regular participant           |
+| Admin | [admin@demo.com]                              | Admin123! | KYC verified, can manage Ajos |
+| User  | [user@demo.com]                               | User123! | Regular participant           |
 
 ### All test users exist in Supabase seed/migrations. Admin operations use **service role key** on server-side endpoints.
 
