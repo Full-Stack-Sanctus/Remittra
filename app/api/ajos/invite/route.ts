@@ -1,71 +1,66 @@
+// @/app/api/ajos/invite/route.ts
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
-    const supabaseServer = getSupabaseServer();
-    const body = await req.json();
-    const { ajoId, userId, durationHours = 24 } = body;
+    const supabase = getSupabaseServer();
+    
+    // 1. Get Session User (Enterprise standard: identify user from server session, not body)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!ajoId || !userId) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
+    const { ajoId } = await req.json();
 
-    // 1. Verify user is head of Ajo
-    const { data: ajo, error: ajoError } = await supabaseServer
+    // 2. Atomic check: Verify ownership and existing valid link
+    const { data: ajo, error: ajoErr } = await supabase
       .from("ajos")
-      .select("created_by")
+      .select("id, name, created_by, invitation_url, invite_expires_at")
       .eq("id", ajoId)
       .single();
 
-    if (ajoError || !ajo)
-      return NextResponse.json({ error: "Ajo not found" }, { status: 404 });
-
-    if (ajo.created_by !== userId)
-      return NextResponse.json(
-        { error: "Only head can generate invite" },
-        { status: 403 },
-      );
-
-    // 2. Generate secure invite code
-    const code = crypto.randomBytes(12).toString("hex"); // 24 chars, more secure
-
-    // 3. Set expiration
-    const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
-
-    // Optional: limit active invites per Ajo (e.g., max 5)
-    const { count } = await supabaseServer
-      .from("ajo_invites")
-      .select("*", { count: "exact" })
-      .eq("ajo_id", ajoId)
-      .gt("expires_at", new Date().toISOString());
-
-    if (count && count >= 5) {
-      return NextResponse.json(
-        { error: "Maximum active invites reached" },
-        { status: 400 },
-      );
+    if (ajoErr || !ajo) return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    
+    // 3. Authorization Check
+    if (ajo.created_by !== user.id) {
+      return NextResponse.json({ error: "Access Denied: You are not the creator of this group." }, { status: 403 });
     }
 
-    // 4. Insert into DB
-    const { data: inviteData, error: inviteError } = await supabaseServer
-      .from("ajo_invites")
-      .insert([{ ajo_id: ajoId, code, expires_at: expiresAt }])
-      .select()
-      .single();
+    // 4. Check if a link already exists and is still valid
+    if (ajo.invitation_url && ajo.invite_expires_at) {
+      const now = new Date();
+      const expiry = new Date(ajo.invite_expires_at);
+      if (now < expiry) {
+        return NextResponse.json({ error: "A link was created already and is still valid." }, { status: 400 });
+      }
+    }
 
-    if (inviteError || !inviteData)
-      return NextResponse.json(
-        { error: "Failed to create invite" },
-        { status: 500 },
-      );
+    // 5. Generate secure 5-minute link
+    const token = crypto.randomBytes(16).toString("hex");
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/join?token=${token}`;
 
-    // 5. Return invite link
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/join/${code}`;
-    return NextResponse.json({ inviteLink, expiresAt });
+    // 6. Update Database
+    const { error: updateErr } = await supabase
+      .from("ajos")
+      .update({
+        invitation_url: inviteLink,
+        invite_expires_at: expiresAt,
+        is_clicked: false
+      })
+      .eq("id", ajoId);
+
+    if (updateErr) throw updateErr;
+
+    return NextResponse.json({ 
+      success: true, 
+      groupName: ajo.name,
+      message: "You have successfully created a link, please check your email." 
+    });
+
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("[INVITE_ERROR]", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

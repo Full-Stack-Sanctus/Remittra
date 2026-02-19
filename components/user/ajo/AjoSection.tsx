@@ -5,6 +5,8 @@ import { useUser } from "@/hooks/useUser";
 import { supabaseClient } from "@/lib/supabaseClient";
 import Button from "@/components/Button";
 
+import Modal from "@/components/Modal";
+
 type Wallet = {
   available: number;
   locked: number;
@@ -36,6 +38,12 @@ export default function AjoSection() {
   const [newAjoName, setNewAjoName] = useState("");
   const [cycleAmount, setCycleAmount] = useState("");
   const [cycleDuration, setCycleDuration] = useState("1");
+  
+  const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
+  
+  const showModal = (title: string, message: string, type: "success" | "error") => {
+    setModal({ isOpen: true, title, message, type });
+  };
   
   const formatInput = (v: string) =>
     v.replace(/\D/g, "").replace(/^0+/, "");
@@ -99,12 +107,21 @@ export default function AjoSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ajoId }),
       });
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      await navigator.clipboard.writeText(data.inviteLink);
-      alert("Invite link copied!");
-    } catch (err: any) {
-      alert(err.message);
+
+      if (!res.ok) {
+        showModal("Request Failed", data.error || "Something went wrong", "error");
+        return;
+      }
+
+      showModal(
+        `Invite for ${data.groupName}`, 
+        "You have successfully created a link, please check your email.", 
+        "success"
+      );
+    } catch (err) {
+      showModal("Connection Error", "Check your internet and try again.", "error");
     }
   };
 
@@ -147,6 +164,16 @@ export default function AjoSection() {
 
   return (
     <div className="space-y-10 px-4 md:px-0 pb-20">
+      
+      <Modal 
+        isOpen={modal.isOpen} 
+        onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
+      
+      
       {/* 1. JOIN GROUP - Mobile Responsive */}
       <div className="bg-gradient-to-br from-brand to-cyan-500 p-6 rounded-[2rem] text-white shadow-xl flex flex-col gap-6">
         <div>
@@ -241,6 +268,12 @@ function AjoCard({ ajo, onInvite }: { ajo: AjoRow, onInvite?: (id: string) => vo
           </button>
         )}
       </div>
+      
+      {createdByMe.map(ajo => (
+        <AjoCard key={ajo.id} ajo={ajo} onInvite={() => generateInviteLink(ajo.id)} />
+      ))}
+      
+      
     </div>
   );
 }
@@ -254,3 +287,4 @@ function AjoSkeleton() {
     </div>
   </div>;
 }
+
