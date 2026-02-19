@@ -23,6 +23,8 @@ export default function WalletSection() {
   const [wallet, setWallet] = useState<Wallet>(EMPTY_WALLET);
   const [amount, setAmount] = useState("");
   const [isFetching, setIsFetching] = useState(true);
+  
+  const formatInput = (value: string) => value.replace(/\D/g, "").replace(/^0+/, "");
 
   const fetchWallet = async () => {
     setIsFetching(true);
