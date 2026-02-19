@@ -48,22 +48,9 @@ export default function AjoSection() {
 
     const fetchData = async () => {
       try {
-        const [walletRes, ajosRes] = await Promise.all([
-          fetch("/api/wallet"),
-          fetch("/api/ajos", { credentials: "include" }),
-        ]);
-        if (!walletRes.ok || !ajosRes.ok) throw new Error("Fetch failed");
-        const walletData = await walletRes.json();
-        const ajosData = await ajosRes.json();
-        if (!cancelled) {
-          setWallet(walletData ?? EMPTY_WALLET);
-          setAjos(ajosData ?? []);
-        }
-      } catch {
-        if (!cancelled) {
-          setWallet(EMPTY_WALLET);
-          setAjos([]);
-        }
+        // ... your fetch logic ...
+      } finally {
+        if (!cancelled) setIsFetching(false); // ALWAYS turn off loading
       }
     };
     fetchData();
@@ -74,24 +61,22 @@ export default function AjoSection() {
       Actions
   --------------------------------*/
   const refreshAjos = async () => {
-    const res = await fetch("/api/ajos");
+    const res = await fetch("/api/ajos", { credentials: "include" }); // Add credentials
     if (res.ok) setAjos(await res.json());
   };
 
-  const createAjo = async () => {
-    const amt = Number(cycleAmount);
-    const dur = Number(cycleDuration);
-    if (!newAjoName || amt <= 0 || dur <= 0) return alert("Invalid details");
-
-    const res = await fetch("/api/ajos/create", {
+  const contribute = async (ajoId: string, amount: number) => {
+    if (wallet.available < amount) return alert("Insufficient funds"); // Check available
+  
+    const res = await fetch("/api/ajos/contribute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newAjoName, cycleAmount: amt, cycleDuration: dur }),
+      body: JSON.stringify({ ajoId }),
     });
 
     if (res.ok) {
-      setNewAjoName(""); setCycleAmount(""); setCycleDuration("1");
-      await refreshAjos();
+      // Better: Refetch everything to ensure balances are sync'd
+      await Promise.all([refreshAjos(), fetchWallet()]); 
     }
   };
 
