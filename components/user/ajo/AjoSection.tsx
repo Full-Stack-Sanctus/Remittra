@@ -209,7 +209,7 @@ export default function AjoSection() {
         <div>
           <SectionHeader title="Groups You Lead" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {createdByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} onInvite={generateInviteLink} />)}
+            {createdByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} onInvite={() => generateInviteLink(ajo.id)} />)}
           </div>
         </div>
       )}
@@ -268,11 +268,6 @@ function AjoCard({ ajo, onInvite }: { ajo: AjoRow, onInvite?: (id: string) => vo
           </button>
         )}
       </div>
-      
-      {createdByMe.map(ajo => (
-        <AjoCard key={ajo.id} ajo={ajo} onInvite={() => generateInviteLink(ajo.id)} />
-      ))}
-      
       
     </div>
   );
