@@ -65,18 +65,20 @@ export default function AjoSection() {
     if (res.ok) setAjos(await res.json());
   };
 
-  const contribute = async (ajoId: string, amount: number) => {
-    if (wallet.available < amount) return alert("Insufficient funds"); // Check available
-  
-    const res = await fetch("/api/ajos/contribute", {
+  const createAjo = async () => {
+    const amt = Number(cycleAmount);
+    const dur = Number(cycleDuration);
+    if (!newAjoName || amt <= 0 || dur <= 0) return alert("Invalid details");
+
+    const res = await fetch("/api/ajos/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId }),
+      body: JSON.stringify({ name: newAjoName, cycleAmount: amt, cycleDuration: dur }),
     });
 
     if (res.ok) {
-      // Better: Refetch everything to ensure balances are sync'd
-      await Promise.all([refreshAjos(), fetchWallet()]); 
+      setNewAjoName(""); setCycleAmount(""); setCycleDuration("1");
+      await refreshAjos();
     }
   };
 
@@ -118,15 +120,17 @@ export default function AjoSection() {
   };
 
   const contribute = async (ajoId: string, amount: number) => {
-    if (wallet.locked < amount) return alert("Insufficient locked funds");
+    if (wallet.available < amount) return alert("Insufficient funds"); // Check available, not locked
+  
     const res = await fetch("/api/ajos/contribute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ajoId }),
     });
+
     if (res.ok) {
-      setWallet(w => ({ ...w, locked: w.locked - amount }));
-      await refreshAjos();
+      // Better: Refetch everything to ensure balances are sync'd
+      await Promise.all([refreshAjos(), fetchWallet()]); 
     }
   };
   
