@@ -219,7 +219,7 @@ function AjoCard({ ajo, onInvite }: { ajo: AjoRow, onInvite?: (id: string) => vo
       
       <div>
         <h3 className="text-xl font-black text-gray-800 leading-tight">{ajo.name}</h3>
-        <p className="text-brand font-black text-lg">₦{ajo.cycle_amount.toLocaleString()}</p>
+        <p className="text-brand font-black text-lg">₦{(ajo.cycle_amount ?? 0).toLocaleString()}</p>
       </div>
 
       <div className="flex gap-2 my-4">
