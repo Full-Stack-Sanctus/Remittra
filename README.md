@@ -70,6 +70,24 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
 ---
 
 
+### Edge Functions 
+
+#### Create a function to clear expired invites
+
+CREATE OR REPLACE FUNCTION clear_expired_ajos_invites()
+RETURNS void AS $$
+BEGIN
+    UPDATE ajos
+    SET 
+        invitation_url = NULL,
+        invite_expires_at = NULL,
+        is_clicked = FALSE
+    WHERE invite_expires_at < NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+---
+
 ### Database Schema (Simplified)
 
 ```sql
@@ -104,7 +122,10 @@ ajos (
   cycle_amount numeric,
   cycle_duration int,      -- in days
   current_cycle int DEFAULT 1,
-  created_by uuid REFERENCES users(id)
+  created_by uuid REFERENCES users(id),
+  invitation_url TEXT,
+  invite_expires_at TIMESTAMPTZ,
+  is_clicked BOOLEAN DEFAULT FALSE
 );
 
 --ajo_invite (
