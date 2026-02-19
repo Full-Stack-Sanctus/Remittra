@@ -106,6 +106,7 @@ export default function AjoSection() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ajoId }),
+        credentials: "include",
       });
       
       const data = await res.json();
