@@ -25,16 +25,17 @@ type AjoRow = {
 
 const EMPTY_WALLET: Wallet = { available: 0, locked: 0, total: 0 };
 
+
 export default function AjoSection() {
   const { user, loading } = useUser();
-
+  const [isFetching, setIsFetching] = useState(true);
   const [wallet, setWallet] = useState<Wallet>(EMPTY_WALLET);
   const [ajos, setAjos] = useState<AjoRow[]>([]);
   const [newAjoName, setNewAjoName] = useState("");
   const [cycleAmount, setCycleAmount] = useState("");
   const [cycleDuration, setCycleDuration] = useState("1");
   const [inviteCode, setInviteCode] = useState("");
-
+  
   const formatInput = (v: string) =>
     v.replace(/\D/g, "").replace(/^0+/, "");
 
@@ -143,81 +144,110 @@ export default function AjoSection() {
       await refreshAjos();
     }
   };
+  
 
-  if (loading) return <div className="p-10 text-center">Loading...</div>;
+  if (loading || isFetching) return <AjoSkeleton />;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-10">
-      
-      {/* JOIN BOX */}
-      <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 flex flex-col md:flex-row gap-4 items-center">
-        <div className="flex-1">
-          <h2 className="text-indigo-900 font-bold text-lg">Have an invite?</h2>
-          <p className="text-indigo-700 text-sm">Paste the link or code below to join a group.</p>
+    <div className="space-y-8">
+      {/* SECTION INDICATOR */}
+      <div className="flex items-center gap-4 px-2">
+        <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent to-gray-200" />
+        <div className="bg-brand/10 text-brand px-4 py-1.5 rounded-full text-sm font-black uppercase tracking-widest border border-brand/20">
+          Ajo Contribution Groups
         </div>
-        <div className="flex w-full md:w-auto gap-2">
+        <div className="h-[2px] flex-1 bg-gradient-to-l from-transparent to-gray-200" />
+      </div>
+
+      {/* JOIN BOX (Upgraded Colors) */}
+      <div className="bg-gradient-to-br from-brand to-[#42b8d4] p-6 rounded-[2rem] text-white shadow-xl shadow-brand/20 flex flex-col md:flex-row gap-6 items-center">
+        <div className="flex-1 text-center md:text-left">
+          <h2 className="font-black text-2xl">Join a Group</h2>
+          <p className="text-white/80 font-medium">Enter your invite token to start contributing with friends.</p>
+        </div>
+        <div className="flex w-full md:w-auto gap-2 bg-white/20 p-2 rounded-2xl backdrop-blur-md">
           <input 
-            className="border rounded-xl px-4 py-2 flex-1 md:w-64" 
-            placeholder="Invite code..."
+            className="bg-transparent placeholder-white/60 border-none focus:ring-0 px-4 py-2 flex-1 md:w-64 font-bold text-white outline-none" 
+            placeholder="Invite token..."
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
           />
-          <Button onClick={handleJoinViaInvite}>Join</Button>
+          <button onClick={handleJoinViaInvite} className="bg-white text-brand font-black px-6 py-2 rounded-xl hover:bg-gray-100 transition-colors">
+            Join
+          </button>
         </div>
       </div>
 
       {/* CREATE BOX */}
-      <section className="bg-white p-6 rounded-2xl border shadow-sm">
-        <h2 className="text-xl font-bold mb-4">Start a New Ajo</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <input className="border rounded-lg p-2" placeholder="Name" value={newAjoName} onChange={e => setNewAjoName(e.target.value)} />
-          <input className="border rounded-lg p-2" placeholder="Amount (₦)" value={cycleAmount} onChange={e => setCycleAmount(formatInput(e.target.value))} />
-          <input className="border rounded-lg p-2" placeholder="Days" value={cycleDuration} onChange={e => setCycleDuration(formatInput(e.target.value))} />
-          <Button onClick={createAjo} className="bg-black text-white">Create</Button>
+      <section className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
+        <h2 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
+          Create New Group <span className="text-brand text-2xl">+</span>
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <input className="bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-brand rounded-xl p-3 font-bold" placeholder="Group Name" value={newAjoName} onChange={e => setNewAjoName(e.target.value)} />
+          <input className="bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-brand rounded-xl p-3 font-bold" placeholder="Amount (₦)" value={cycleAmount} onChange={e => setCycleAmount(formatInput(e.target.value))} />
+          <input className="bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-brand rounded-xl p-3 font-bold" placeholder="Cycle Days" value={cycleDuration} onChange={e => setCycleDuration(formatInput(e.target.value))} />
+          <button onClick={createAjo} className="bg-gray-900 text-white font-black rounded-xl p-3 hover:bg-black transition-all">Start Group</button>
         </div>
       </section>
 
       {/* GROUP LIST */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {ajos.map((ajo) => (
-          <div key={ajo.id} className="bg-white border rounded-3xl p-6 shadow-sm flex flex-col">
-            <div className="flex justify-between items-start mb-4">
+          <div key={ajo.id} className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col relative overflow-hidden">
+             {/* Status Badge */}
+             <div className="absolute top-0 right-10 bg-brand text-white px-4 py-1 rounded-b-xl text-[10px] font-black uppercase tracking-tighter">
+                Cycle #{ajo.current_cycle}
+             </div>
+
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <h3 className="text-xl font-bold">{ajo.name}</h3>
-                <p className="text-blue-600 font-bold">₦{(ajo.cycle_amount ?? 0).toLocaleString()}</p>
+                <h3 className="text-2xl font-black text-gray-800">{ajo.name}</h3>
+                <p className="text-brand text-xl font-black">₦{(ajo.cycle_amount ?? 0).toLocaleString()}</p>
               </div>
               
-              {/* THE ADD BUTTON */}
               <button 
                 onClick={() => generateInviteLink(ajo.id)}
-                className="bg-green-100 text-green-700 hover:bg-green-200 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-1"
+                className="bg-gray-50 text-gray-600 hover:text-brand px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1 border border-gray-100"
               >
-                <span>+</span> Add Member
+                + MEMBER
               </button>
             </div>
 
-            <div className="flex gap-10 text-sm text-gray-500 mb-6 bg-gray-50 p-4 rounded-2xl">
-              <div>
-                <p className="text-xs uppercase font-semibold">Duration</p>
-                <p className="text-gray-900 font-bold">{ajo.cycle_duration} Days</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase font-semibold">Status</p>
-                <p className="text-gray-900 font-bold">Cycle #{ajo.current_cycle}</p>
-              </div>
+            <div className="flex gap-4 mb-8">
+               <div className="bg-gray-50 px-4 py-2 rounded-xl flex-1 border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Duration</p>
+                  <p className="text-gray-800 font-black">{ajo.cycle_duration} Days</p>
+               </div>
+               <div className="bg-gray-50 px-4 py-2 rounded-xl flex-1 border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Contribution</p>
+                  <p className="text-gray-800 font-black">Fixed</p>
+               </div>
             </div>
 
             {ajo.joined && (
-              <Button 
+              <button 
                 disabled={ajo.payout_due}
                 onClick={() => contribute(ajo.id, ajo.cycle_amount)}
-                className="w-full justify-center mt-auto"
+                className={`w-full py-4 rounded-2xl font-black transition-all active:scale-[0.98] ${ajo.payout_due ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-brand text-white shadow-lg shadow-brand/20 hover:bg-brand-dark"}`}
               >
-                {ajo.payout_due ? "Wait for Payout" : "Contribute Now"}
-              </Button>
+                {ajo.payout_due ? "WAITING FOR PAYOUT" : "CONTRIBUTE NOW"}
+              </button>
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function AjoSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-32 skeleton rounded-[2rem] w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="h-64 skeleton rounded-[2.5rem]" />
+        <div className="h-64 skeleton rounded-[2.5rem]" />
       </div>
     </div>
   );
