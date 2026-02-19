@@ -17,6 +17,7 @@ const EMPTY_WALLET: Wallet = {
   total: 0,
 };
 
+
 export default function WalletSection() {
   const { user, loading } = useUser();
   const [wallet, setWallet] = useState<Wallet>(EMPTY_WALLET);
@@ -34,9 +35,84 @@ export default function WalletSection() {
   };
 
   useEffect(() => { if (user?.id) fetchWallet(); }, [user?.id]);
+  
+  // 🔹 Reset wallet on sign-out
+  useEffect(() => {
+   const { data } = supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT") setWallet(EMPTY_WALLET);
+    if (event === "SIGNED_IN") fetchWallet();
+   });
+   return () => data.subscription.unsubscribe();
+  }, []);
+  
 
   if (loading || isFetching) return <WalletSkeleton />;
   if (!user) return <div className="p-8 text-center bg-white rounded-3xl border italic text-gray-400">Please sign in to view wallet</div>;
+  
+  // 🔹 Deposit
+  const deposit = async () => {
+    const amt = Number(amount);
+    if (amt <= 0) return alert("Enter a valid amount");
+
+    try {
+      const res = await fetch("/api/wallet/deposit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ amount: amt }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        return alert(err.error || "Deposit failed");
+      }
+
+      const data = await res.json();
+      // Update wallet from server response
+      
+      setWallet({
+      balance: data.balance, 
+      total: data.newTotalBalance, // Or whatever fields your API returned
+      locked: data.locked 
+      
+    });
+    } catch (err) {
+      console.error("Deposit error:", err);
+      alert("Deposit failed");
+    }
+  };
+
+  // 🔹 Withdraw
+  const withdraw = async () => {
+    const amt = Number(amount);
+    if (amt <= 0 || amt > wallet.balance) return alert("Cannot withdraw more than available balance");
+
+
+    try {
+      const res = await fetch("/api/wallet/withdraw", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ amount: amt }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        return alert(err.error || "Withdrawal failed");
+      }
+
+      const data = await res.json();
+      setWallet((w) => ({ ...w, balance: data.balance, total: data.newTotalBalance, locked: data.locked }));
+      setAmount("");
+    } catch (err) {
+      console.error("Withdrawal error:", err);
+      alert("Withdrawal failed");
+    }
+  };
 
   return (
     <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
