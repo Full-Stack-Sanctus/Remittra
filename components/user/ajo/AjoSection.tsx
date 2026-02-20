@@ -39,6 +39,9 @@ export default function AjoSection() {
   const [cycleAmount, setCycleAmount] = useState("");
   const [cycleDuration, setCycleDuration] = useState("1");
   
+  //button
+  const [isJoining, setIsJoining] = useState(false);
+  
   const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
   
   const showModal = (title: string, message: string, type: "success" | "error") => {
@@ -128,6 +131,8 @@ export default function AjoSection() {
 
   const handleJoinViaInvite = async (inviteCode: string) => {
       
+    setIsJoining(true)
+      
     const error = "Please enter a link or code";
     
     if (!inviteCode) {
@@ -156,6 +161,9 @@ export default function AjoSection() {
       );
     } catch (err) {
       showModal("Connection Error", "Check your internet and try again.", "error");
+    } finally {
+      // Stop loading regardless of success or failure
+      setIsJoining(false);
     }
   };
     
@@ -203,7 +211,7 @@ export default function AjoSection() {
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
           />
-          <button onClick={() => handleJoinViaInvite(inviteCode)} className="bg-white text-brand font-black px-8 py-3 rounded-2xl hover:scale-105 transition-transform">
+          <button isLoading={isJoining} onClick={() => handleJoinViaInvite(inviteCode)} className="bg-white text-brand font-black px-8 py-3 rounded-2xl hover:scale-105 transition-transform">
             Join
           </button>
         </div>
