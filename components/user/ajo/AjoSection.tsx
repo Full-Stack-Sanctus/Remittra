@@ -41,6 +41,7 @@ export default function AjoSection() {
   
   //button
   const [isJoining, setIsJoining] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
   
@@ -105,6 +106,8 @@ export default function AjoSection() {
 
   const generateInviteLink = async (ajoId: string) => {
     try {
+      setIsGenerating(true);
+      
       const res = await fetch("/api/ajos/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,12 +129,13 @@ export default function AjoSection() {
       );
     } catch (err) {
       showModal("Connection Error", "Check your internet and try again.", "error");
+    } finally {
+      // Stop loading regardless of success or failure
+      setIsGenerating(false);
     }
   };
 
   const handleJoinViaInvite = async (inviteCode: string) => {
-      
-    
       
     const error = "Please enter a link or code";
     
