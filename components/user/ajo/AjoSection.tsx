@@ -41,7 +41,7 @@ export default function AjoSection() {
   
   //button
   const [isJoining, setIsJoining] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
   
   const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
   
@@ -106,7 +106,7 @@ export default function AjoSection() {
 
   const generateInviteLink = async (ajoId: string) => {
     try {
-      setIsGenerating(true);
+      setGeneratingId(ajoId)
       
       const res = await fetch("/api/ajos/invite", {
         method: "POST",
@@ -131,7 +131,7 @@ export default function AjoSection() {
       showModal("Connection Error", "Check your internet and try again.", "error");
     } finally {
       // Stop loading regardless of success or failure
-      setIsGenerating(false);
+      setGeneratingId(null)
     }
   };
 
@@ -239,7 +239,7 @@ export default function AjoSection() {
         <div>
           <SectionHeader title="Groups You Lead" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {createdByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} onInvite={() => generateInviteLink(ajo.id)} />)}
+            {createdByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} onInvite={() => generateInviteLink(ajo.id)} generatingId={generatingId} />)}
           </div>
         </div>
       )}
@@ -249,7 +249,7 @@ export default function AjoSection() {
         <div>
           <SectionHeader title="Member Groups" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {joinedByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} />)}
+            {joinedByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} generatingId={generatingId} />)}
           </div>
         </div>
       )}
@@ -267,7 +267,7 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-function AjoCard({ ajo, onInvite, isGenerating }: { ajo: AjoRow, onInvite?: (id: string) => void, isGenerating: boolean }) {
+function AjoCard({ ajo, onInvite, generatingId }: { ajo: AjoRow, onInvite?: (id: string) => void, generatingId: string | null }) {
   return (
     <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[220px]">
       <div className="absolute top-0 right-6 bg-brand/10 text-brand px-3 py-1 rounded-b-lg text-[10px] font-bold">
@@ -290,7 +290,7 @@ function AjoCard({ ajo, onInvite, isGenerating }: { ajo: AjoRow, onInvite?: (id:
         </button>
         {ajo.is_head && onInvite && (
           <Button 
-            isLoading={isGenerating}
+            isLoading={generatingId === ajo.id}
             onClick={() => onInvite(ajo.id)}
             className="bg-gray-100 p-3 rounded-xl hover:bg-gray-200 transition-colors"
             title="Invite Member"
