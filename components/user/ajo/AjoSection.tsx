@@ -144,7 +144,8 @@ export default function AjoSection() {
       }
       
       showModal(
-        `You have Successfully joined the group ${data.groupName}.`, 
+        `Request to join ${data.groupName}`,
+        `You have Successfully made a request to join the group ${data.groupName}.`, 
         "success"
       );
     } catch (err) {
