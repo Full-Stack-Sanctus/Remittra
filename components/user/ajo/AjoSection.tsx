@@ -128,7 +128,7 @@ export default function AjoSection() {
 
   const handleJoinViaInvite = async (inviteCode: string) => {
       
-    error = "Please enter a link or code";
+    const error = "Please enter a link or code";
     
     if (!inviteCode) {
         showModal("Request Failed", error || "Something went wrong", "error");
