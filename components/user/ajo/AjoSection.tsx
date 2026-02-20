@@ -304,6 +304,7 @@ function AjoCard({ ajo, onInvite }: { ajo: AjoRow, onInvite?: (id: string) => vo
   );
 }
 
+
 function AjoSkeleton() {
   return <div className="p-8 animate-pulse space-y-8">
     <div className="h-40 bg-gray-100 rounded-[2rem]" />
