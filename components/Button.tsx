@@ -1,27 +1,27 @@
 import React from "react";
 
-// We extend the standard attributes to include our custom isLoading prop
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
 }
 
-export default function Button({ 
-  isLoading, 
-  children, 
-  disabled, 
-  className, 
-  ...props 
+export default function Button({
+  isLoading,
+  children,
+  disabled,
+  className,
+  ...props
 }: ButtonProps) {
   return (
     <button
-      // We disable the button if it's loading OR if the disabled prop is passed
       disabled={isLoading || disabled}
-      className={`flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      // Note: we removed the hardcoded bg-blue-500 so your 'bg-white' can take effect
+      className={`flex items-center justify-center min-h-[44px] transition-all disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       {...props}
     >
-      {isLoading && (
+      {isLoading ? (
+        // Only the spinner shows when loading
         <svg
-          className="animate-spin h-5 w-5 text-white"
+          className="animate-spin h-5 w-5"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -40,8 +40,10 @@ export default function Button({
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           ></path>
         </svg>
+      ) : (
+        // Text only shows when NOT loading
+        children
       )}
-      {children}
     </button>
   );
 }
