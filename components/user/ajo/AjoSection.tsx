@@ -211,9 +211,9 @@ export default function AjoSection() {
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
           />
-          <button isLoading={isJoining} onClick={() => handleJoinViaInvite(inviteCode)} className="bg-white text-brand font-black px-8 py-3 rounded-2xl hover:scale-105 transition-transform">
+          <Button isLoading={isJoining} onClick={() => handleJoinViaInvite(inviteCode)} className="bg-white text-brand font-black px-8 py-3 rounded-2xl hover:scale-105 transition-transform">
             Join
-          </button>
+          </Button>
         </div>
       </div>
 
