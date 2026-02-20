@@ -289,13 +289,14 @@ function AjoCard({ ajo, onInvite }: { ajo: AjoRow, onInvite?: (id: string) => vo
           {ajo.payout_due ? "PAYOUT DUE" : "CONTRIBUTE"}
         </button>
         {ajo.is_head && onInvite && (
-          <button 
+          <Button 
+            isLoading={isGenerating}
             onClick={() => onInvite(ajo.id)}
             className="bg-gray-100 p-3 rounded-xl hover:bg-gray-200 transition-colors"
             title="Invite Member"
           >
             ➕
-          </button>
+          </Button>
         )}
       </div>
       
