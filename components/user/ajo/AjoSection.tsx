@@ -267,7 +267,7 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-function AjoCard({ ajo, onInvite }: { ajo: AjoRow, onInvite?: (id: string) => void }) {
+function AjoCard({ ajo, onInvite, isGenerating }: { ajo: AjoRow, onInvite?: (id: string) => void, isGenerating: boolean }) {
   return (
     <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[220px]">
       <div className="absolute top-0 right-6 bg-brand/10 text-brand px-3 py-1 rounded-b-lg text-[10px] font-bold">
