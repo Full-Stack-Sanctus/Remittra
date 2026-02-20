@@ -23,13 +23,13 @@ export async function POST(req: Request) {
     }
 
     // 2. Trace the Request URL (The full link used to join)
-    const { requestUrl } = await req.json();
+    const { inviteCode } = await req.json();
 
     // 3. Find Ajo by invitation_url and validate state
     const { data: ajo, error: ajoErr } = await supabase
       .from("ajos")
       .select("id, created_by, invitation_url, is_clicked, invite_expires_at")
-      .eq("invitation_url", requestUrl)
+      .eq("invitation_url", inviteCode)
       .single();
 
     if (ajoErr || !ajo) {
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     const { data: existingInvite } = await supabase
       .from("ajo_invites")
       .select("id")
-      .eq("request_url", requestUrl)
+      .eq("request_url", inviteCode)
       .eq("user_id", user.id)
       .single();
 
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
           user_email: user.email,
           ajo_id: ajo.id,
           created_by: ajo.created_by, // The Ajo creator
-          request_url: requestUrl,
+          request_url: inviteCode,
           status: "pending"
         });
 
