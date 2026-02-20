@@ -126,8 +126,12 @@ export default function AjoSection() {
     }
   };
 
-  const handleJoinViaInvite = async () => {
-    if (!inviteCode) return alert("Please enter a link or code");
+  const handleJoinViaInvite = async (inviteCode: string) => {
+    
+    if (!inviteCode) {
+        showModal("Request Failed", "Please enter a link or code" || "Something went wrong", "error");
+        return;
+      }
     
     try {
       const res = await fetch("/api/ajos/join", {
@@ -197,7 +201,7 @@ export default function AjoSection() {
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
           />
-          <button onClick={() => {}} className="bg-white text-brand font-black px-8 py-3 rounded-2xl hover:scale-105 transition-transform">
+          <button onClick={() => handleJoinViaInvite(inviteCode)} className="bg-white text-brand font-black px-8 py-3 rounded-2xl hover:scale-105 transition-transform">
             Join
           </button>
         </div>
