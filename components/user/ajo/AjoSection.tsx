@@ -131,7 +131,7 @@ export default function AjoSection() {
 
   const handleJoinViaInvite = async (inviteCode: string) => {
       
-    setIsJoining(true)
+    
       
     const error = "Please enter a link or code";
     
@@ -141,6 +141,8 @@ export default function AjoSection() {
       }
     
     try {
+      setIsJoining(true);
+      
       const res = await fetch("/api/ajos/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
