@@ -130,10 +130,13 @@ ajos (
 
 --ajo_invite (
   id uuid PRIMARY KEY,
-  ajo_id uuid REFERENCES ajos(id),
-  code text UNIQUE NOT NULL
-  cycle_duration int,      -- in days
-  created_at_timestamp with tome zone default now()
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  user_email TEXT NOT NULL,
+  ajo_id UUID REFERENCES ajos(id) ON DELETE CASCADE NOT NULL,
+  created_by UUID REFERENCES auth.users(id) NOT NULL,
+  request_url TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Ajo Members
@@ -163,6 +166,11 @@ create policy "users_insert_default_admin_false"
 on users
 for insert
 with check (is_admin = false);
+
+-- Allow creators to see invites for their groups
+CREATE POLICY "Creators can view their group invites" ON ajo_invites
+FOR SELECT USING (auth.uid() = created_by);
+
 ```
 ---
 

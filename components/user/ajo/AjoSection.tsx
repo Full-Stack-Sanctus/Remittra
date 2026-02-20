@@ -128,22 +128,30 @@ export default function AjoSection() {
 
   const handleJoinViaInvite = async () => {
     if (!inviteCode) return alert("Please enter a link or code");
-    const token = inviteCode.includes("token=") ? inviteCode.split("token=")[1] : inviteCode;
     
-    const res = await fetch("/api/ajos/join-invite", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
+    try {
+      const res = await fetch("/api/ajos/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode }),
+      });
     
-    if (res.ok) {
-      alert("Successfully joined the group!");
-      setInviteCode("");
-      await refreshAjos();
-    } else {
-      alert("Could not join. Link may be expired.");
+      const data = await res.json();
+
+      if (!res.ok) {
+        showModal("Request Failed", data.error || "Something went wrong", "error");
+        return;
+      }
+      
+      showModal(
+        `You have Successfully joined the group ${data.groupName}.`, 
+        "success"
+      );
+    } catch (err) {
+      showModal("Connection Error", "Check your internet and try again.", "error");
     }
   };
+    
 
   const contribute = async (ajoId: string, amount: number) => {
     if (wallet.available < amount) return alert("Insufficient funds"); // Check available

@@ -1,52 +1,89 @@
-import { getSupabaseServer } from "@/lib/supabaseServer";
-import { NextRequest, NextResponse } from "next/server";
+// @/app/api/ajos/join/route.ts
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value; },
+      },
+    }
+  );
+
   try {
-    const { code, userId } = await req.json();
-    if (!code || !userId)
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    // 1. Get Authenticated User
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (!user || authError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const supabaseServer = getSupabaseServer();
+    // 2. Trace the Request URL (The full link used to join)
+    const { requestUrl } = await req.json();
 
-    // 1. Validate invite code
-    const { data: invite, error: inviteError } = await supabaseServer
+    // 3. Find Ajo by invitation_url and validate state
+    const { data: ajo, error: ajoErr } = await supabase
+      .from("ajos")
+      .select("id, created_by, invitation_url, is_clicked, invite_expires_at")
+      .eq("invitation_url", requestUrl)
+      .single();
+
+    if (ajoErr || !ajo) {
+      return NextResponse.json({ error: "Invalid link or link not found." }, { status: 404 });
+    }
+
+    // 4. Logic Checks
+    if (ajo.is_clicked) {
+      return NextResponse.json({ error: "This link has already been used and is now expired." }, { status: 400 });
+    }
+
+    if (ajo.created_by === user.id) {
+      return NextResponse.json({ error: "You cannot add yourself to a group you created." }, { status: 403 });
+    }
+
+    // 5. Update Ajo state to "Clicked"
+    const { error: updateErr } = await supabase
+      .from("ajos")
+      .update({ is_clicked: true })
+      .eq("id", ajo.id);
+
+    if (updateErr) throw updateErr;
+
+    // 6. Check if user already has an invite entry for this link
+    const { data: existingInvite } = await supabase
       .from("ajo_invites")
-      .select("*")
-      .eq("code", code)
-      .single();
-
-    if (inviteError || !invite)
-      return NextResponse.json({ error: "Invalid invite" }, { status: 400 });
-
-    if (new Date(invite.expires_at) < new Date())
-      return NextResponse.json({ error: "Invite expired" }, { status: 400 });
-
-    const ajoId = invite.ajo_id;
-
-    // 2. Check if user already joined
-    const { data: member } = await supabaseServer
-      .from("ajo_members")
       .select("id")
-      .eq("ajo_id", ajoId)
-      .eq("user_id", userId)
+      .eq("request_url", requestUrl)
+      .eq("user_id", user.id)
       .single();
 
-    if (member) return NextResponse.json({ error: "Already joined" }, { status: 400 });
+    if (!existingInvite) {
+      // Create new row in ajo_invites
+      const { error: inviteInsertErr } = await supabase
+        .from("ajo_invites")
+        .insert({
+          user_id: user.id,
+          user_email: user.email,
+          ajo_id: ajo.id,
+          created_by: ajo.created_by, // The Ajo creator
+          request_url: requestUrl,
+          status: "pending"
+        });
 
-    // 3. Insert member
-    const { error: joinError } = await supabaseServer
-      .from("ajo_members")
-      .insert({ ajo_id: ajoId, user_id: userId });
+      if (inviteInsertErr) throw inviteInsertErr;
+    }
 
-    if (joinError) return NextResponse.json({ error: joinError.message }, { status: 500 });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Your request to join has been submitted for approval." 
+    });
 
-    // 4. Delete / expire invite
-    await supabaseServer.from("ajo_invites").delete().eq("code", code);
-
-    return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("[JOIN_ROUTE_ERROR]", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
