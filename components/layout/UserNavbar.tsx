@@ -66,7 +66,16 @@ export default function UserNavbar() {
             {/* Menu Items */}
             <ul className="flex-1 py-6 px-4 space-y-2">
               <MenuItem icon={<Wallet size={20}/>} label="My Wallet" active />
-              <MenuItem icon={<Users size={20}/>} label="Ajo Groups" />
+              
+              <MenuItem 
+              icon={<Users size={20}/>} 
+              label="Ajo Groups" 
+              onClick={() => {
+                router.push("/dashboard/ajo-groups");
+                setIsOpen(false);
+              }}
+              />
+              
               <MenuItem icon={<Settings size={20}/>} label="Account Settings" />
               <MenuItem icon={<UserCircle size={20}/>} label="Identity Verification" />
             </ul>
