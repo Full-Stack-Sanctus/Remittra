@@ -100,9 +100,9 @@ export default function UserNavbar() {
   );
 }
 
-function MenuItem({ icon, label, active = false }: { icon: any, label: string, active?: boolean }) {
+function MenuItem({ icon, label, active = false, onClick }: { icon: any, label: string, active?: boolean, onClick?: () => void }) {
   return (
-    <li className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${active ? "bg-brand text-white shadow-md shadow-brand/30" : "text-gray-600 hover:bg-gray-50 hover:text-brand"}`}>
+    <li onClick={onClick} className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${active ? "bg-brand text-white shadow-md shadow-brand/30" : "text-gray-600 hover:bg-gray-50 hover:text-brand"}`}>
       {icon} <span className="font-bold">{label}</span>
     </li>
   );
