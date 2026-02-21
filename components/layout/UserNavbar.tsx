@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 import { Menu, X, UserCircle, Settings, LogOut, Wallet, Users, Home } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 export default function UserNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname(); // Get current URL path
 
   const handleLogout = async () => {
     try {
@@ -69,7 +70,8 @@ export default function UserNavbar() {
               
               <MenuItem 
                 icon={<Home size={20}/>} 
-                label="Home" 
+                label="Home"
+                active={pathname === "/user"}
                 onClick={() => {
                   router.push("/user");
                   setIsOpen(false);
@@ -78,7 +80,8 @@ export default function UserNavbar() {
               
               <MenuItem 
                 icon={<Users size={20}/>} 
-                label="Ajo Groups" 
+                label="Ajo Groups"
+                active={pathname === "/user/dashboard/ajo-groups"}
                 onClick={() => {
                   router.push("/user/dashboard/ajo-groups");
                   setIsOpen(false);
