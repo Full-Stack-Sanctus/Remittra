@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Menu, X, UserCircle, Settings, LogOut, Wallet, Users } from "lucide-react";
+import { Menu, X, UserCircle, Settings, LogOut, Wallet, Users, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 
@@ -65,15 +65,24 @@ export default function UserNavbar() {
 
             {/* Menu Items */}
             <ul className="flex-1 py-6 px-4 space-y-2">
-              <MenuItem icon={<Wallet size={20}/>} label="My Wallet" active />
+              {/* <MenuItem icon={<Wallet size={20}/>} label="My Wallet" active /> */}
               
               <MenuItem 
-              icon={<Users size={20}/>} 
-              label="Ajo Groups" 
-              onClick={() => {
-                router.push("/user/dashboard/ajo-groups");
-                setIsOpen(false);
-              }}
+                icon={<Home size={20}/>} 
+                label="Home" 
+                onClick={() => {
+                  router.push("/user");
+                  setIsOpen(false);
+                }}
+              />
+              
+              <MenuItem 
+                icon={<Users size={20}/>} 
+                label="Ajo Groups" 
+                onClick={() => {
+                  router.push("/user/dashboard/ajo-groups");
+                  setIsOpen(false);
+                }}
               />
               
               <MenuItem icon={<Settings size={20}/>} label="Account Settings" />
