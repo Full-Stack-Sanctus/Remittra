@@ -71,7 +71,7 @@ export default function UserNavbar() {
               icon={<Users size={20}/>} 
               label="Ajo Groups" 
               onClick={() => {
-                router.push("/dashboard/ajo-groups");
+                router.push("/user/dashboard/ajo-groups");
                 setIsOpen(false);
               }}
               />
