@@ -80,7 +80,7 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} className="bg-[#58cee8] text-white font-bold rounded-md hover:bg-[#4ab8d1] py-2">
           {loading ? "Signing you in..." : "Sign In"}
         </Button>
 
@@ -89,7 +89,6 @@ export default function Login() {
           <Button
             type="button"
             onClick={() => router.push("/signup")}
-            className="bg-[#58cee8] text-white font-bold rounded-md hover:bg-[#4ab8d1] py-2"
           >
             Create one
           </Button>
