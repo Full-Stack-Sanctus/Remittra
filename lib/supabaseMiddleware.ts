@@ -48,7 +48,7 @@ export const updateSession = async (request: NextRequest) => {
 
   // If trying to access /admin or /user without being logged in
   if (!user && (url.pathname.startsWith("/admin") || url.pathname.startsWith("/user"))) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   // 4. ROLE-BASED ACCESS CONTROL (RBAC)
@@ -66,7 +66,7 @@ export const updateSession = async (request: NextRequest) => {
     }
     
     // Redirect logged-in users away from Login/Signup
-    if (url.pathname === "/login" || url.pathname === "/signup") {
+    if (url.pathname === "/" || url.pathname === "/signup") {
       return NextResponse.redirect(new URL(profile?.is_admin ? "/admin" : "/user", request.url));
     }
   }
