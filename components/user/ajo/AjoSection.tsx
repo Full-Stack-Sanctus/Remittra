@@ -244,7 +244,7 @@ export default function AjoSection() {
         </div>
       )}
 
-      {/* 4. JOINED SECTION */}
+      {/* 4. JOINED SECTION 
       {joinedByMe.length > 0 && (
         <div>
           <SectionHeader title="Member Groups" />
@@ -253,6 +253,9 @@ export default function AjoSection() {
           </div>
         </div>
       )}
+      */}
+      
+      
     </div>
   );
 }

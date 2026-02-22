@@ -24,6 +24,17 @@ export async function GET(req: Request) {
       console.error("Wallet fetch error:", walletError);
       return NextResponse.json({ balance: 0, locked: 0, total: 0 });
     }
+    
+    if (!wallet) {
+      const { data: newWallet, error: createError } = await supabase
+        .from("wallets")
+        .insert([{ user_id: user.id, balance: 0, locked: 0, total: 0 }])
+        .select()
+        .single();
+
+      if (createError) return NextResponse.json({ error: createError.message }, { status: 500 });
+    wallet = newWallet;
+    }
 
     return NextResponse.json({
       balance: wallet?.balance ?? 0,

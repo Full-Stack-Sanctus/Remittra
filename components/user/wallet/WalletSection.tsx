@@ -25,12 +25,22 @@ export default function WalletSection() {
   const [isFetching, setIsFetching] = useState(true);
   
   const formatInput = (value: string) => value.replace(/\D/g, "").replace(/^0+/, "");
-
+  
   const fetchWallet = async () => {
-    setIsFetching(true);
+  setIsFetching(true);
     try {
       const res = await fetch("/api/wallet", { credentials: "include" });
-      if (res.ok) setWallet(await res.json());
+    
+      if (res.ok) {
+        const data = await res.json();
+        setWallet(data);
+      } else {
+        // If the API returns 404 or 500, we fallback to EMPTY_WALLET
+        setWallet(EMPTY_WALLET);
+      }
+    } catch (err) {
+      console.error("Wallet fetch error:", err);
+      setWallet(EMPTY_WALLET);
     } finally {
       setIsFetching(false);
     }
