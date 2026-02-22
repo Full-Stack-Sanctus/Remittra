@@ -10,71 +10,36 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
   const router = useRouter();
 
-  const validateInputs = () => {
-    if (!name.trim()) {
-      alert("Name is required");
-      return false;
-    }
-
-    if (!email.trim()) {
-      alert("Email is required");
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      alert("Enter a valid email address");
-      return false;
-    }
-
-    if (!password || password.length < 6) {
-      alert("Password must be at least 6 characters");
-      return false;
-    }
-
-    return true;
-  };
-
   const handleSignUp = async () => {
-    if (!validateInputs()) return;
-
     try {
       setLoading(true);
 
-      // 1️⃣ Create auth user
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
+        options: {
+          // Pass metadata for the DB trigger
+          data: {
+            full_name: name,
+          },
+          // PKCE Flow: Redirect to our callback route
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        },
       });
 
       if (error) throw error;
-      if (!data.user) throw new Error("User not created");
 
-      // 2️⃣ Create user profile row
-      const { error: profileError } = await supabaseClient
-        .from("users")
-        .insert({
-          id: data.user.id,
-          email: email,
-          full_name: name,
-          is_admin: false,
-          kyc_verified: false,
-        });
-
-      if (profileError) throw profileError;
-
-      alert("Signup successful! Please log in.");
-      router.push("/");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error("Signup error:", err);
-        alert(err.message);
-      } else {
-        alert("Signup failed");
+      // In enterprise apps, we check if identities are empty (email taken)
+      if (data?.user?.identities?.length === 0) {
+        throw new Error("Email already in use.");
       }
+
+      alert("Check your email to confirm your account!");
+      router.push("/login");
+    } catch (err: any) {
+      alert(err.message || "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -106,9 +71,10 @@ export default function Signup() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <Button onClick={handleSignUp} disabled={loading}>
+      <Button onClick={handleSignUp} disabled={loading} className="w-full max-w-xs mt-4">
         {loading ? "Creating account..." : "Sign Up"}
       </Button>
     </div>
   );
+  
 }

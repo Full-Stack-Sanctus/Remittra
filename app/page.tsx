@@ -86,13 +86,13 @@ export default function Login() {
 
         <p className="mt-2 text-sm text-center">
           Don’t have an account?{" "}
-          <button
+          <Button
             type="button"
             onClick={() => router.push("/signup")}
-            className="text-blue-600 underline"
+            className="w-full max-w-xs mt-4"
           >
             Create one
-          </button>
+          </Button>
         </p>
       </form>
     </div>

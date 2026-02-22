@@ -69,11 +69,41 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
 
 ---
 
+### Databse Functions
+
+#### Create a trigger function
+
+```sql
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.users (id, email, full_name, is_admin, kyc_verified)
+  values (
+    new.id, 
+    new.email, 
+    new.raw_user_meta_data->>'full_name', 
+    false, 
+    false
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+###### Trigger the function every time a user is created
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+```
+
+---
+
 
 ### Edge Functions 
 
 #### Create a function to clear expired invites
 
+```sql
 CREATE OR REPLACE FUNCTION clear_expired_ajos_invites()
 RETURNS void AS $$
 BEGIN
@@ -85,6 +115,8 @@ BEGIN
     WHERE invite_expires_at < NOW();
 END;
 $$ LANGUAGE plpgsql;
+
+```
 
 ---
 
