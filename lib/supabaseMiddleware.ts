@@ -18,17 +18,24 @@ export const updateSession = async (request: NextRequest) => {
         getAll() {
           return request.cookies.getAll();
         },
+        // Inside your setAll(cookiesToSet) function:
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // FIX: Pass as a single object instead of 3 arguments
+            request.cookies.set({ name, value, ...options });
+          });
+
           response = NextResponse.next({
             request,
           });
+
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            // response.cookies.set still accepts (name, value, options) 
+            // but using the object syntax here too keeps it consistent
+            response.cookies.set({ name, value, ...options })
           );
         },
+        
       },
     }
   );

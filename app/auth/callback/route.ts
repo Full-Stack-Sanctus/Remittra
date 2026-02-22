@@ -1,4 +1,3 @@
-// app/auth/callback/route.ts
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
@@ -24,11 +23,12 @@ export async function GET(request: Request) {
           setAll(cookiesToSet) {
             try {
               cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
+                // Using object spread for compatibility and consistency
+                cookieStore.set({ name, value, ...options })
               );
             } catch {
-              // Middleware handles session refreshing, so we can ignore 
-              // errors if this is called from a Server Component.
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing sessions.
             }
           },
         },
@@ -40,6 +40,7 @@ export async function GET(request: Request) {
 
     if (!error && data?.user) {
       // 2. Fetch user role to decide the first redirect destination
+      // Using the supabase instance we just created which now has the session
       const { data: profile } = await supabase
         .from("users")
         .select("is_admin")
@@ -48,10 +49,12 @@ export async function GET(request: Request) {
 
       // 3. Route based on role
       const redirectPath = profile?.is_admin ? "/admin" : "/user";
+      
+      // origin ensures we don't redirect to a malicious external site
       return NextResponse.redirect(`${origin}${redirectPath}`);
     }
   }
 
-  // If something goes wrong, send them to an error page
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // If something goes wrong or code is missing, send them to an error page
+  return NextResponse.redirect(`${origin}/login?error=auth-code-error`);
 }
