@@ -71,7 +71,7 @@ export default function Signup() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <Button onClick={handleSignUp} disabled={loading} className="w-full max-w-xs mt-4">
+      <Button onClick={handleSignUp} disabled={loading} className="w-full max-w-xs mt-4 bg-[#58cee8] text-white font-bold rounded-md hover:bg-[#4ab8d1]">
         {loading ? "Creating account..." : "Sign Up"}
       </Button>
     </div>

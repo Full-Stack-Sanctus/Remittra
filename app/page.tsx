@@ -89,7 +89,7 @@ export default function Login() {
           <Button
             type="button"
             onClick={() => router.push("/signup")}
-            className="w-full max-w-xs mt-4"
+            className="bg-[#58cee8] text-white font-bold rounded-md hover:bg-[#4ab8d1] py-2"
           >
             Create one
           </Button>
