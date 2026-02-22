@@ -84,15 +84,19 @@ export default function Login() {
           {loading ? "Signing you in..." : "Sign In"}
         </Button>
 
-        <p className="mt-2 text-sm text-center">
+        <p className="mt-4 text-sm flex items-center justify-center gap-1">
           Don’t have an account?{" "}
+          
           <Button
             type="button"
             onClick={() => router.push("/signup")}
+            className="text-[#58cee8] hover:underline font-semibold p-0 bg-transparent border-none"
           >
             Create one
           </Button>
+          
         </p>
+
       </form>
     </div>
   );
