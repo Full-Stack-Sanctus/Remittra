@@ -37,7 +37,7 @@ export default function Signup() {
       }
 
       alert("Check your email to confirm your account!");
-      router.push("/login");
+      router.push("/");
     } catch (err: any) {
       alert(err.message || "An error occurred");
     } finally {
