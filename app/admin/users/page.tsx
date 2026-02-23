@@ -1,6 +1,7 @@
 // app/admin/users/page.tsx
 "use client";
 
+import UserNavbar from "@/components/layout/UserNavbar";
 import useSWR from "swr";
 import { Users, ShieldCheck, FileText } from "lucide-react";
 
@@ -19,6 +20,9 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
+    
+      <UserNavbar />
+      
       <div>
         <h1 className="text-3xl font-black text-gray-900">User Management</h1>
         <p className="text-gray-500">Full list of members and their verification history.</p>
