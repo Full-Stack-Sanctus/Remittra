@@ -39,7 +39,7 @@ export default function KYCPage() {
           <VerificationTierCard 
             tier={1}
             title="Basic Access"
-            status={currentLevel >= 1 ? "completed" : "pending"}
+            status={currentLevel >= 1 ? "completed" : "action-required"}
             requirements="Phone Number & Email"
             perks="Join public circles, max ₦50k contribution"
           />
