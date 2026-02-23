@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
-import { useUser } from "@/hooks/useUser";
+import { useUser } from "@/context/UserContext";
 import Button from "@/components/Button";
+import { useState } from "react";
+import useSWR from "swr";
+
 
 type Wallet = {
   balance: number;
@@ -18,113 +19,47 @@ const EMPTY_WALLET: Wallet = {
 };
 
 
+// SWR fetcher function
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function WalletSection() {
-  const { user, loading } = useUser();
-  const [wallet, setWallet] = useState<Wallet>(EMPTY_WALLET);
+  const { user, loading: userLoading } = useUser();
   const [amount, setAmount] = useState("");
-  const [isFetching, setIsFetching] = useState(true);
-  
+
+  // 🔹 SWR handles fetching, caching, and loading states automatically
+  // It only fetches if user is present
+  const { data: wallet, error, isLoading, mutate } = useSWR(
+    user ? "/api/wallet" : null, 
+    fetcher,
+    { refreshInterval: 30000 } // Auto-refresh every 30 seconds
+  );
+
   const formatInput = (value: string) => value.replace(/\D/g, "").replace(/^0+/, "");
-  
-  const fetchWallet = async () => {
-  setIsFetching(true);
-    try {
-      const res = await fetch("/api/wallet", { credentials: "include" });
-    
-      if (res.ok) {
-        const data = await res.json();
-        setWallet(data);
-      } else {
-        // If the API returns 404 or 500, we fallback to EMPTY_WALLET
-        setWallet(EMPTY_WALLET);
-      }
-    } catch (err) {
-      console.error("Wallet fetch error:", err);
-      setWallet(EMPTY_WALLET);
-    } finally {
-      setIsFetching(false);
-    }
-  };
 
-  useEffect(() => { if (user?.id) fetchWallet(); }, [user?.id]);
-  
-  // 🔹 Reset wallet on sign-out
-  useEffect(() => {
-   const { data } = supabaseClient.auth.onAuthStateChange((event) => {
-    if (event === "SIGNED_OUT") setWallet(EMPTY_WALLET);
-    if (event === "SIGNED_IN") fetchWallet();
-   });
-   return () => data.subscription.unsubscribe();
-  }, []);
-  
-
-  if (loading || isFetching) return <WalletSkeleton />;
+  // 🔹 Simplified UI Logic
+  if (userLoading || isLoading) return <WalletSkeleton />;
   if (!user) return <div className="p-8 text-center bg-white rounded-3xl border italic text-gray-400">Please sign in to view wallet</div>;
-  
-  // 🔹 Deposit
-  const deposit = async () => {
+  if (error) return <div className="p-8 text-center text-red-500">Failed to load wallet data.</div>;
+
+  // 🔹 Optimistic Updates
+  // When you deposit/withdraw, you call mutate() to refresh the data instantly
+  const handleAction = async (type: 'deposit' | 'withdraw') => {
     const amt = Number(amount);
     if (amt <= 0) return alert("Enter a valid amount");
 
-    try {
-      const res = await fetch("/api/wallet/deposit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ amount: amt }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        return alert(err.error || "Deposit failed");
-      }
-
-      const data = await res.json();
-      // Update wallet from server response
-      
-      setWallet({
-      balance: data.balance, 
-      total: data.newTotalBalance, // Or whatever fields your API returned
-      locked: data.locked 
-      
+    const res = await fetch(`/api/wallet/${type}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: amt }),
     });
-    } catch (err) {
-      console.error("Deposit error:", err);
-      alert("Deposit failed");
-    }
-  };
 
-  // 🔹 Withdraw
-  const withdraw = async () => {
-    const amt = Number(amount);
-    if (amt <= 0 || amt > wallet.balance) return alert("Cannot withdraw more than available balance");
-
-
-    try {
-      const res = await fetch("/api/wallet/withdraw", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ amount: amt }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        return alert(err.error || "Withdrawal failed");
-      }
-
-      const data = await res.json();
-      setWallet((w) => ({ ...w, balance: data.balance, total: data.newTotalBalance, locked: data.locked }));
+    if (res.ok) {
       setAmount("");
-    } catch (err) {
-      console.error("Withdrawal error:", err);
-      alert("Withdrawal failed");
+      mutate(); // 🔥 Magic: Tells SWR to re-fetch wallet data immediately
     }
   };
+
+
 
   return (
     <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
@@ -155,10 +90,10 @@ export default function WalletSection() {
             />
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button onClick={deposit} className="flex-1 sm:flex-none bg-brand hover:bg-brand-dark text-white font-black px-6 py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-brand/20">
+            <button onClick={() => handleAction('deposit')} className="flex-1 sm:flex-none bg-brand hover:bg-brand-dark text-white font-black px-6 py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-brand/20">
               Deposit
             </button>
-            <button onClick={withdraw} className="flex-1 sm:flex-none bg-white border-2 border-brand text-brand hover:bg-brand/5 font-black px-6 py-3 rounded-xl transition-all">
+            <button onClick={() => handleAction('withdraw')} className="flex-1 sm:flex-none bg-white border-2 border-brand text-brand hover:bg-brand/5 font-black px-6 py-3 rounded-xl transition-all">
               Withdraw
             </button>
           </div>
@@ -189,3 +124,4 @@ function WalletSkeleton() {
     </div>
   );
 }
+

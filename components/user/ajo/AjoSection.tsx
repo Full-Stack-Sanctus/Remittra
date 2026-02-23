@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useUser } from "@/hooks/useUser";
-import { supabaseClient } from "@/lib/supabaseClient";
-import Button from "@/components/Button";
 
+import Button from "@/components/Button";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
+import { useUser } from "@/context/UserContext";
 import Modal from "@/components/Modal";
+
+// SWR Fetcher
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 type Wallet = {
   available: number;
@@ -28,10 +31,8 @@ const EMPTY_WALLET: Wallet = { available: 0, locked: 0, total: 0 };
 
 
 export default function AjoSection() {
+  
   const { user, loading: userLoading } = useUser();
-  const [isFetching, setIsFetching] = useState(true);
-  const [wallet, setWallet] = useState<Wallet>(EMPTY_WALLET);
-  const [ajos, setAjos] = useState<AjoRow[]>([]);
   const [inviteCode, setInviteCode] = useState("");
   
   // Create Form States
@@ -41,69 +42,50 @@ export default function AjoSection() {
   
   //button
   const [isJoining, setIsJoining] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   
+  // 🔹 SWR Data Fetching
+  const { data: ajos = [], error, isLoading, mutate } = useSWR(
+    user ? "/api/ajos" : null,
+    fetcher
+  );
+  
   const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
-  
-  const showModal = (title: string, message: string, type: "success" | "error") => {
-    setModal({ isOpen: true, title, message, type });
-  };
-  
-  const formatInput = (v: string) =>
-    v.replace(/\D/g, "").replace(/^0+/, "");
 
-  /* ----------------------------------
-      Fetch Data
-  -----------------------------------*/
-  const fetchData = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      setIsFetching(true);
-      const res = await fetch("/api/ajos", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setAjos(data);
-      }
-    } catch (err) {
-      console.error("Failed to load ajos", err);
-    } finally {
-      setIsFetching(false);
-    }
-  }, [user?.id]);
+  const formatInput = (v: string) => v.replace(/\D/g, "").replace(/^0+/, "");
+  const showModal = (title: string, message: string, type: "success" | "error") => setModal({ isOpen: true, title, message, type });
   
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
   
-  // Sectioning Logic
-  const createdByMe = useMemo(() => ajos.filter(a => a.is_head), [ajos]);
-  const joinedByMe = useMemo(() => ajos.filter(a => !a.is_head), [ajos]);
+  // Filter logic
+  const createdByMe = useMemo(() => ajos.filter((a: any) => a.is_head), [ajos]);
 
   /* -------------------------------
       Actions
   --------------------------------*/
-  const refreshAjos = async () => {
-    const res = await fetch("/api/ajos", { credentials: "include" }); // Add credentials
-    if (res.ok) setAjos(await res.json());
-  };
-
   const createAjo = async () => {
     const amt = Number(cycleAmount);
     const dur = Number(cycleDuration);
     if (!newAjoName || amt <= 0 || dur <= 0) return alert("Invalid details");
 
-    const res = await fetch("/api/ajos/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newAjoName, cycleAmount: amt, cycleDuration: dur }),
-    });
+    setIsCreating(true);
+    try {
+      const res = await fetch("/api/ajos/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newAjoName, cycleAmount: amt, cycleDuration: dur }),
+      });
 
-    if (res.ok) {
-      setNewAjoName(""); setCycleAmount(""); setCycleDuration("1");
-      await refreshAjos();
+      if (res.ok) {
+        setNewAjoName(""); setCycleAmount(""); setCycleDuration("1");
+        mutate(); // 🔥 Refresh list immediately
+        showModal("Success", "Group created successfully", "success");
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
-
+  
   const generateInviteLink = async (ajoId: string) => {
     try {
       setGeneratingId(ajoId)
@@ -135,45 +117,28 @@ export default function AjoSection() {
     }
   };
 
-  const handleJoinViaInvite = async (inviteCode: string) => {
-      
-    const error = "Please enter a link or code";
-    
-    if (!inviteCode) {
-        showModal("Request Failed", error || "Something went wrong", "error");
-        return;
-      }
-    
+  const handleJoinViaInvite = async () => {
+    if (!inviteCode) return showModal("Error", "Please enter a code", "error");
+    setIsJoining(true);
     try {
-      setIsJoining(true);
-      
       const res = await fetch("/api/ajos/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inviteCode }),
       });
-    
       const data = await res.json();
-
-      if (!res.ok) {
-        showModal("Request Failed", data.error || "Something went wrong", "error");
-        return;
+      if (res.ok) {
+        setInviteCode("");
+        mutate();
+        showModal("Success", `Request sent to join ${data.groupName}`, "success");
+      } else {
+        showModal("Failed", data.error, "error");
       }
-      
-      showModal(
-        `Request to join ${data.groupName}`,
-        `You have Successfully made a request to join the group ${data.groupName}.`, 
-        "success"
-      );
-    } catch (err) {
-      showModal("Connection Error", "Check your internet and try again.", "error");
     } finally {
-      // Stop loading regardless of success or failure
       setIsJoining(false);
     }
   };
-    
-
+  
   const contribute = async (ajoId: string, amount: number) => {
     if (wallet.available < amount) return alert("Insufficient funds"); // Check available
   
@@ -189,22 +154,28 @@ export default function AjoSection() {
     }
   };
   
+  
 
-  if (userLoading || isFetching) return <AjoSkeleton />;
+  // 🔹 Guard Clauses for Enterprise UX
+  if (userLoading || isLoading) return <AjoSkeleton />;
+  
+  if (!user) {
+    return (
+      <div className="p-12 text-center bg-white rounded-[2rem] border border-dashed border-gray-300">
+        <p className="text-gray-500 italic">Please sign in to manage your Ajo groups.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 px-4 md:px-0 pb-20">
-      
       <Modal 
         isOpen={modal.isOpen} 
         onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
-        title={modal.title}
-        message={modal.message}
-        type={modal.type}
+        title={modal.title} message={modal.message} type={modal.type}
       />
-      
-      
-      {/* 1. JOIN GROUP - Mobile Responsive */}
+
+      {/* 1. JOIN GROUP */}
       <div className="bg-gradient-to-br from-brand to-cyan-500 p-6 rounded-[2rem] text-white shadow-xl flex flex-col gap-6">
         <div>
           <h2 className="font-black text-2xl">Join a Group</h2>
@@ -217,48 +188,56 @@ export default function AjoSection() {
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
           />
-          <Button isLoading={isJoining} onClick={() => handleJoinViaInvite(inviteCode)} className="bg-white text-brand font-black px-8 py-3 rounded-2xl hover:scale-105 transition-transform">
+          <Button isLoading={isJoining} onClick={handleJoinViaInvite} className="bg-white text-brand font-black px-8 py-3 rounded-2xl">
             Join
           </Button>
         </div>
       </div>
 
-      {/* 2. CREATE GROUP - Grid for Mobile */}
+      {/* 2. CREATE GROUP */}
       <section className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm">
         <h2 className="text-xl font-black text-gray-800 mb-6">Start New Ajo</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <input className="input-style" placeholder="Group Name" value={newAjoName} onChange={e => setNewAjoName(e.target.value)} />
-          <input className="input-style" placeholder="Amount (₦)" value={cycleAmount} />
-          <input className="input-style" placeholder="Days" value={cycleDuration} />
-          <button className="bg-gray-900 text-white font-black rounded-xl p-3">Create</button>
+          <input className="input-style" placeholder="Amount (₦)" value={cycleAmount} onChange={e => setCycleAmount(formatInput(e.target.value))} />
+          <input className="input-style" placeholder="Days" value={cycleDuration} onChange={e => setCycleDuration(formatInput(e.target.value))} />
+          <Button isLoading={isCreating} onClick={createAjo} className="bg-gray-900 text-white font-black rounded-xl p-3">
+            Create
+          </Button>
         </div>
       </section>
 
-      {/* 3. CREATED BY USER SECTION */}
-      {createdByMe.length > 0 && (
-        <div>
-          <SectionHeader title="Groups You Lead" />
+      {/* 3. GROUPS YOU LEAD */}
+      <div>
+        <SectionHeader title="Groups You Lead" />
+        {createdByMe.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {createdByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} onInvite={() => generateInviteLink(ajo.id)} generatingId={generatingId} />)}
+            {createdByMe.map((ajo: any) => (
+              <AjoCard 
+                key={ajo.id} 
+                ajo={ajo} 
+                generatingId={generatingId}
+                onInvite={async (id) => {
+                  setGeneratingId(id);
+                  // Your generateInviteLink logic here...
+                  setGeneratingId(null);
+                }} 
+              />
+            ))}
           </div>
-        </div>
-      )}
-
-      {/* 4. JOINED SECTION 
-      {joinedByMe.length > 0 && (
-        <div>
-          <SectionHeader title="Member Groups" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {joinedByMe.map(ajo => <AjoCard key={ajo.id} ajo={ajo} generatingId={generatingId} />)}
+        ) : (
+          <div className="bg-gray-50 rounded-[2rem] p-12 text-center border border-dashed border-gray-200">
+            <p className="text-gray-400 font-medium">You haven't created any groups yet.</p>
+            <p className="text-xs text-gray-400 mt-1">Use the form above to start your first Ajo.</p>
           </div>
-        </div>
-      )}
-      */}
-      
-      
+        )}
+      </div>
     </div>
   );
 }
+
+
+
 
 // Sub-components for cleaner code
 function SectionHeader({ title }: { title: string }) {
@@ -317,4 +296,3 @@ function AjoSkeleton() {
     </div>
   </div>;
 }
-

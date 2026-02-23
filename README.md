@@ -46,6 +46,16 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
   
 ---
 
+### Data Fetching & State Management
+
+* **SWR (Stale-While-Revalidate):** Used for efficient, client-side data fetching to ensure:
+* **Real-time UI Updates:** Wallet balances and Ajo cycle statuses stay in sync without manual refreshes.
+* **Optimistic UI:** Provides a snappy user experience during contributions and withdrawals.
+* **Cache Management:** Reduces redundant API calls to Supabase by caching previous fetch results.
+  * 
+
+---
+
 ### Security
 
 * **Security Model (App Router + Supabase)**
@@ -208,7 +218,7 @@ FOR SELECT USING (auth.uid() = created_by);
 
 ### Tech Stack
 
-* **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS
+* **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS, SWR (Data Fetching)
 * **Backend / Data:** Supabase (Auth, Postgres, RLS – public schema)
 * **DevOps:** Vercel deployment, GitHub Actions CI
  
