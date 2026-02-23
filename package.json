@@ -13,6 +13,7 @@
     "seed": "npx tsc scripts/seed.ts --outDir scripts-dist && node scripts-dist/scripts/seed.js"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.91.1",
     "lucide-react": "^0.563.0",
