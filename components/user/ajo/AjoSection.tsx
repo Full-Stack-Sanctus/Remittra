@@ -139,20 +139,6 @@ export default function AjoSection() {
     }
   };
   
-  const contribute = async (ajoId: string, amount: number) => {
-    if (wallet.available < amount) return alert("Insufficient funds"); // Check available
-  
-    const res = await fetch("/api/ajos/contribute", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ajoId }),
-    });
-
-    if (res.ok) {
-      // Better: Refetch everything to ensure balances are sync'd
-      await Promise.all([refreshAjos()]); 
-    }
-  };
   
   
 
