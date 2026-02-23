@@ -35,7 +35,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       const { data: profile, error } = await supabaseClient
         .from("users")
-        .select("id, is_admin")
+        .select("id, is_admin, verification_level, kyc_status")
         .eq("id", session.user.id)
         .single();
 
