@@ -67,3 +67,27 @@ export default function KYCPage() {
     </div>
   );
 }
+
+function KYCSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+      <div className="max-w-4xl mx-auto space-y-8 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-8 w-64 bg-gray-200 rounded-lg" />
+          <div className="h-4 w-96 bg-gray-200 rounded-lg" />
+        </div>
+
+        {/* Status Card Skeleton */}
+        <div className="h-24 bg-white rounded-[2rem] border border-gray-100" />
+
+        {/* Tiers Skeleton */}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-40 bg-white rounded-[2rem] border border-gray-100" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
