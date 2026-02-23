@@ -28,10 +28,10 @@ export default function WalletSection() {
 
   // 🔹 SWR handles fetching, caching, and loading states automatically
   // It only fetches if user is present
-  const { data: wallet, error, isLoading, mutate } = useSWR(
+  const { data: walletData, error, isLoading, mutate } = useSWR(
     user ? "/api/wallet" : null, 
     fetcher,
-    { refreshInterval: 30000 } // Auto-refresh every 30 seconds
+    { refreshInterval: 30000 }
   );
   
   const wallet = walletData ?? EMPTY_WALLET;
