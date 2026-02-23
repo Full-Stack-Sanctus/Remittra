@@ -4,6 +4,8 @@
 import useSWR from "swr";
 import Button from "@/components/Button";
 import { useState } from "react";
+import Link from "next/link"; // Import Link for navigation
+import { ArrowRight } from "lucide-react";
 
 type UserRow = { id: string; email: string; kyc_verified: boolean };
 
@@ -13,6 +15,9 @@ export default function UsersSection() {
   const { data: users = [], isLoading, mutate } = useSWR<UserRow[]>("/api/users", fetcher);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // Take only the first 5 users for the dashboard view
+  const previewUsers = users.slice(0, 5);
+
   const toggleKYC = async (id: string, verified: boolean) => {
     setTogglingId(id);
     try {
@@ -21,7 +26,7 @@ export default function UsersSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: id, verified }),
       });
-      if (res.ok) mutate(); // Refresh list
+      if (res.ok) mutate();
     } catch (err) {
       alert("Error toggling KYC");
     } finally {
@@ -43,7 +48,7 @@ export default function UsersSection() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {users.map((user) => (
+            {previewUsers.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50/30 transition-colors">
                 <td className="px-6 py-4 font-bold text-gray-700">{user.email}</td>
                 <td className="px-6 py-4">
@@ -63,13 +68,23 @@ export default function UsersSection() {
                         : "bg-brand text-white shadow-lg shadow-brand/20"
                     }`}
                   >
-                    {user.kyc_verified ? "Revoke Access" : "Verify User"}
+                    {user.kyc_verified ? "Revoke" : "Verify"}
                   </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+      
+      {/* Footer Link to Full User Page */}
+      <div className="bg-gray-50/50 p-4 border-t border-gray-100 flex justify-center">
+        <Link 
+          href="/admin/users" 
+          className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand hover:gap-3 transition-all"
+        >
+          View All Users & KYC Details <ArrowRight size={14} />
+        </Link>
       </div>
     </div>
   );
@@ -78,7 +93,7 @@ export default function UsersSection() {
 function AdminTableSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      {[1, 2, 3].map((i) => (
+      {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-16 bg-gray-100 rounded-2xl w-full" />
       ))}
     </div>
