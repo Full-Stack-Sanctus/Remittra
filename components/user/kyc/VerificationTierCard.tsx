@@ -1,4 +1,6 @@
 // @/components/user/kyc/VerificationTierCard.tsx
+import { CheckCircleIcon, LockClosedIcon } from "@heroicons/react/24/solid";
+
 interface TierProps {
   tier: number;
   title: string;
