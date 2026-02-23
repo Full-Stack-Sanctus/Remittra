@@ -48,7 +48,8 @@ export default function AjoSection() {
   // 🔹 SWR Data Fetching
   const { data: ajos = [], error, isLoading, mutate } = useSWR(
     user ? "/api/ajos" : null,
-    fetcher
+    fetcher,
+    { refreshInterval: 30000 }
   );
   
   const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });

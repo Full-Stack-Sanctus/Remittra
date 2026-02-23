@@ -81,28 +81,36 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
 
 ### Databse Functions
 
-#### Create a trigger function
+#### -- 1. Create the function to add new users to aith and that inserts the wallet
 
 ```sql
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.users (id, email, full_name, is_admin, kyc_verified)
-  values (
-    new.id, 
-    new.email, 
-    new.raw_user_meta_data->>'full_name', 
-    false, 
+
+-- 2. Create one master initialization function
+CREATE OR REPLACE FUNCTION public.handle_new_user_setup()
+RETURNS trigger AS $$
+BEGIN
+  -- Insert into public.users first (The parent)
+  INSERT INTO public.users (id, email, full_name, is_admin, kyc_verified)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'full_name',
+    false,
     false
   );
-  return new;
-end;
-$$ language plpgsql security definer;
 
-###### Trigger the function every time a user is created
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+  -- Insert into public.wallets second (The child)
+  INSERT INTO public.wallets (user_id, balance, locked_balance, total)
+  VALUES (new.id, 0, 0, 0);
+
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 3. Create the single trigger
+CREATE TRIGGER on_auth_signup_complete
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user_setup();
 
 ```
 

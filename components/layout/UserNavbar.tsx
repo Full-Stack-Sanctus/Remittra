@@ -1,121 +1,88 @@
 "use client";
 import { useState } from "react";
-import { Menu, X, UserCircle, Settings, LogOut, Wallet, Users, Home } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { useUser } from "@/context/UserContext"; // Import your hook
+import { MENU_ITEMS } from "@/constants/navigation"; // Import the config
 
 export default function UserNavbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, loading } = useUser(); // Get user role
   const router = useRouter();
-  const pathname = usePathname(); // Get current URL path
+  const pathname = usePathname();
 
   const handleLogout = async () => {
-    try {
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) throw error;
-      setIsOpen(false);
-      router.push("/");
-      router.refresh();
-    } catch (error: any) {
-      console.error("Error logging out:", error.message);
-    }
+    await supabaseClient.auth.signOut();
+    router.push("/");
+    router.refresh();
   };
+
+  // 1. Filter items based on admin status
+  const filteredMenu = MENU_ITEMS.filter(item => {
+    if (item.adminOnly) return user?.is_admin === true;
+    return true;
+  });
 
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-white border-b border-gray-100">
         <nav className="flex items-center justify-between px-6 py-4 shadow-sm">
-          <button 
-            onClick={() => setIsOpen(true)}
-            className="p-2 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors"
-          >
+          <button onClick={() => setIsOpen(true)} className="p-2 hover:bg-gray-100 rounded-lg">
             <Menu size={24} />
           </button>
 
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-xs text-gray-500 font-medium">Welcome back</p>
-              <p className="text-sm font-bold text-gray-800">User Account</p>
-            </div>
-            <div className="w-10 h-10 rounded-full border-2 border-brand overflow-hidden bg-gray-100">
-              <img src="/api/placeholder/40/40" alt="User" className="w-full h-full object-cover" />
+              {/* 2. Dynamically show role label */}
+              <p className="text-sm font-bold text-gray-800">
+                {loading ? "Loading..." : user?.is_admin ? "Administrator" : "User Account"}
+              </p>
             </div>
           </div>
         </nav>
       </header>
 
-      {/* Full Length Sidebar Menu */}
-      <div className={`fixed inset-0 z-50 transition-visibility duration-300 ${isOpen ? "visible" : "invisible"}`}>
-        {/* Overlay */}
-        <div 
-          className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}
-          onClick={() => setIsOpen(false)}
-        />
+      {/* Sidebar Drawer */}
+      <div className={`fixed inset-0 z-50 ${isOpen ? "visible" : "invisible"}`}>
+        <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`} onClick={() => setIsOpen(false)} />
         
-        {/* Drawer */}
-        <div className={`absolute left-0 top-0 h-full w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className={`absolute left-0 top-0 h-full w-72 bg-white transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <div className="flex flex-col h-full">
-            {/* Top Branding Area */}
-            <div className="p-6 bg-brand/10 border-b border-brand/20 flex flex-col items-center">
-              <div className="w-16 h-16 bg-brand rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-brand/20">
-                <img src="/api/placeholder/64/64" alt="Company Logo" className="rounded-xl" />
-              </div>
-              <h2 className="text-xl font-black text-gray-800">AJO PRO</h2>
-              <p className="text-xs text-brand-dark font-bold uppercase tracking-widest">Enterprise Secured</p>
+            <div className="p-6 bg-brand/10 border-b flex flex-col items-center">
+               <h2 className="text-xl font-black text-gray-800">AJO PRO</h2>
+               <span className="text-[10px] bg-brand text-white px-2 py-0.5 rounded-full mt-1">
+                 {user?.is_admin ? "ADMIN" : "MEMBER"}
+               </span>
             </div>
 
-            {/* Menu Items */}
+            {/* 3. Map through the filtered menu */}
             <ul className="flex-1 py-6 px-4 space-y-2">
-              {/* <MenuItem icon={<Wallet size={20}/>} label="My Wallet" active /> */}
-              
-              <MenuItem 
-                icon={<Home size={20}/>} 
-                label="Home"
-                active={pathname === "/user"}
-                onClick={() => {
-                  router.push("/user");
-                  setIsOpen(false);
-                }}
-              />
-              
-              <MenuItem 
-                icon={<Users size={20}/>} 
-                label="Ajo Groups"
-                active={pathname === "/user/dashboard/ajo-groups"}
-                onClick={() => {
-                  router.push("/user/dashboard/ajo-groups");
-                  setIsOpen(false);
-                }}
-              />
-              
-              <MenuItem icon={<Settings size={20}/>} label="Account Settings" />
-              <MenuItem icon={<UserCircle size={20}/>} label="Identity Verification" />
+              {filteredMenu.map((item) => (
+                <MenuItem 
+                  key={item.href}
+                  icon={<item.icon size={20}/>} 
+                  label={item.label}
+                  active={pathname === item.href}
+                  onClick={() => {
+                    router.push(item.href);
+                    setIsOpen(false);
+                  }}
+                />
+              ))}
             </ul>
 
-            {/* Footer / Logout */}
-            <div className="p-4 border-t border-gray-100">
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-red-600 font-bold hover:bg-red-50 rounded-xl transition-colors"
-              >
+            <div className="p-4 border-t">
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-600 font-bold hover:bg-red-50 rounded-xl transition-colors">
                 <LogOut size={20} /> Logout
               </button>
             </div>
           </div>
-          
-          <button onClick={() => setIsOpen(false)} className="absolute top-4 right-[-50px] text-white">
-            <X size={32} />
-          </button>
         </div>
       </div>
     </>
   );
 }
 
-function MenuItem({ icon, label, active = false, onClick }: { icon: any, label: string, active?: boolean, onClick?: () => void }) {
-  return (
-    <li onClick={onClick} className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${active ? "bg-brand text-white shadow-md shadow-brand/30" : "text-gray-600 hover:bg-gray-50 hover:text-brand"}`}>
-      {icon} <span className="font-bold">{label}</span>
-    </li>
-  );
-}
+// Keep your MenuItem helper as is
