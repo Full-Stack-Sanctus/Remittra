@@ -1,5 +1,5 @@
 // constants/navigation.ts
-import { Home, Users, Settings, UserCircle, ShieldCheck, UsersRound } from "lucide-react";
+import { Home, Users, Settings, UserCircle, ShieldCheck } from "lucide-react";
 
 export type Role = "admin" | "user";
 
@@ -24,12 +24,6 @@ export const MENU_ITEMS: MenuItemConfig[] = [
     icon: Users,
     href: "/user/dashboard/ajo-groups",
     allowedRoles: ["user"], // Admins won't see this at all
-  },
-  {
-    label: "Users",
-    icon: UsersRound,
-    href: "/admin/users",
-    allowedRoles: ["admin"],
   },
   {
     label: "User Management", // Admins see this instead of Ajo Groups
