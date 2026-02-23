@@ -7,6 +7,8 @@ type UserProfile = {
   id: string;
   email: string;
   is_admin: boolean;
+  verification_level: 1 | 2 | 3;
+  kyc_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
 };
 
 interface UserContextType {
