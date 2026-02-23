@@ -33,6 +33,8 @@ export default function WalletSection() {
     fetcher,
     { refreshInterval: 30000 } // Auto-refresh every 30 seconds
   );
+  
+  const wallet = walletData ?? EMPTY_WALLET;
 
   const formatInput = (value: string) => value.replace(/\D/g, "").replace(/^0+/, "");
 
