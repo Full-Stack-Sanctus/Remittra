@@ -45,6 +45,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         id: session.user.id,
         email: session.user.email ?? "",
         is_admin: profile?.is_admin ?? false,
+        verification_level: profile.verification_level ?? 1,
+        kyc_status: profile.kyc_status ?? 'IDLE',
       });
     } catch (err) {
       console.error("Context Error:", err);
