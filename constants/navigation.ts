@@ -1,35 +1,52 @@
 // constants/navigation.ts
 import { Home, Users, Settings, UserCircle, ShieldCheck } from "lucide-react";
 
-export const MENU_ITEMS = [
+export type Role = "admin" | "user";
+
+export interface MenuItemConfig {
+  label: string;
+  icon: any;
+  // href can be a string or a function that returns a string based on admin status
+  href: string | ((isAdmin: boolean) => string);
+  allowedRoles: Role[]; 
+}
+
+export const MENU_ITEMS: MenuItemConfig[] = [
   {
     label: "Home",
     icon: Home,
-    href: "/user",
-    adminOnly: false,
+    // If admin, go to /admin, else /user
+    href: (isAdmin) => (isAdmin ? "/admin" : "/user"),
+    allowedRoles: ["admin", "user"],
   },
   {
     label: "Ajo Groups",
     icon: Users,
     href: "/user/dashboard/ajo-groups",
-    adminOnly: false,
+    allowedRoles: ["user"], // Admins won't see this at all
   },
   {
-    label: "Admin Panel",
+    label: "User Management", // Admins see this instead of Ajo Groups
+    icon: Users,
+    href: "/admin/users",
+    allowedRoles: ["admin"],
+  },
+  {
+    label: "Admin Control",
     icon: ShieldCheck,
     href: "/admin/dashboard",
-    adminOnly: true, // Only admins see this
+    allowedRoles: ["admin"],
   },
   {
     label: "Identity Verification",
     icon: UserCircle,
     href: "/user/dashboard/verify",
-    adminOnly: false,
+    allowedRoles: ["user"], // Admins might not need to verify themselves
   },
   {
-    label: "Account Settings",
+    label: "Settings",
     icon: Settings,
-    href: "/user/settings",
-    adminOnly: false,
+    href: (isAdmin) => (isAdmin ? "/admin/settings" : "/user/settings"),
+    allowedRoles: ["admin", "user"],
   },
 ];
