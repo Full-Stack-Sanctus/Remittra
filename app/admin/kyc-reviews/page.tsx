@@ -35,7 +35,7 @@ export default function AdminKYCQueue() {
             className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition ${selectedUser?.id === u.id ? 'bg-brand/5 border-l-4 border-l-brand' : ''}`}
           >
             <p className="font-bold text-gray-800">{u.full_name}</p>
-            <p className="text-xs text-gray-500">Tier 2 -> Tier 3 • {u.submitted_at}</p>
+            <p className="text-xs text-gray-500">Tier 2 &rarr; Tier 3 • {u.submitted_at}</p>
           </div>
         ))}
       </div>
