@@ -109,7 +109,7 @@ function BalanceCard({ label, amount, primary = false }: { label: string, amount
   return (
     <div className={`p-5 rounded-2xl ${primary ? "bg-brand text-white shadow-xl shadow-brand/20" : "bg-gray-50 text-gray-800 border border-gray-100"}`}>
       <p className={`text-xs font-bold uppercase ${primary ? "text-white/80" : "text-gray-400"}`}>{label}</p>
-      <p className="text-2xl font-black mt-1">₦{amount.toLocaleString()}</p>
+      <p className="text-2xl font-black mt-1">₦{(amount ?? 0).toLocaleString()}</p>
     </div>
   );
 }
