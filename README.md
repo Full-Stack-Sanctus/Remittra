@@ -81,36 +81,40 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
 
 ### Databse Functions
 
-#### -- 1. Create the function to add new users to aith and that inserts the wallet
+#### -- 1. Create the function to add new users to auth and that inserts the wallet
 
 ```sql
 
--- 2. Create one master initialization function
 CREATE OR REPLACE FUNCTION public.handle_new_user_setup()
-RETURNS trigger AS $$
+RETURNS trigger 
+LANGUAGE plpgsql 
+SECURITY DEFINER 
+SET search_path = public
+AS $$
 BEGIN
-  -- Insert into public.users first (The parent)
+  -- 1. Insert into public.users (This part is usually fine)
   INSERT INTO public.users (id, email, full_name, is_admin, kyc_verified)
   VALUES (
     new.id,
     new.email,
-    new.raw_user_meta_data->>'full_name',
+    COALESCE(new.raw_user_meta_data->>'full_name', 'New User'),
     false,
     false
   );
 
-  -- Insert into public.wallets second (The child)
-  INSERT INTO public.wallets (user_id, balance, locked_balance, total)
-  VALUES (new.id, 0, 0, 0);
+  -- 2. Insert into public.wallets 
+  -- We ONLY insert the user_id. The database will fill in the 0s automatically.
+  INSERT INTO public.wallets (user_id)
+  VALUES (new.id);
 
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
--- 3. Create the single trigger
-CREATE TRIGGER on_auth_signup_complete
+-- 2. Re-create the trigger
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user_setup();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_setup();
 
 ```
 
@@ -146,7 +150,10 @@ users (
   id uuid PRIMARY KEY,      -- matches auth.users.id
   email text,
   kyc_verified boolean,
-  is_admin boolean
+  is_admin boolean,
+  verification_level INT,
+  kyc_status TEXT,
+  kyc_notes TEXT
 );
 
 -- Wallets
@@ -154,6 +161,19 @@ wallets (
   user_id uuid PRIMARY KEY REFERENCES users(id),
   available_balance numeric DEFAULT 0,
   locked_balance numeric DEFAULT 0
+);
+
+-- kyc_submissions
+kyc_submissions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  tier_requested INT,
+  id_image_url TEXT,
+  selfie_url TEXT,
+  bvn_vnin_last_4 TEXT,
+  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  processed_at TIMESTAMP WITH TIME ZONE,
+  processed_by UUID REFERENCES users(id) -- Admin who handled it
 );
 
 -- Wallet Transactions

@@ -1,68 +1,86 @@
 // components/admin/UsersSection/UsersSection.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 import Button from "@/components/Button";
+import { useState } from "react";
 
 type UserRow = { id: string; email: string; kyc_verified: boolean };
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function UsersSection() {
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("/api/users");
-      const data = await res.json();
-      setUsers(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Failed to fetch users", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchUsers(); }, []);
+  const { data: users = [], isLoading, mutate } = useSWR<UserRow[]>("/api/users", fetcher);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const toggleKYC = async (id: string, verified: boolean) => {
+    setTogglingId(id);
     try {
       const res = await fetch("/api/admin/toggle-kyc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: id, verified }),
       });
-      if (res.ok) fetchUsers();
+      if (res.ok) mutate(); // Refresh list
     } catch (err) {
       alert("Error toggling KYC");
+    } finally {
+      setTogglingId(null);
     }
   };
 
-  if (loading) return <div>Loading users...</div>;
+  if (isLoading) return <AdminTableSkeleton />;
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <table className="min-w-full bg-white">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-2 text-left">Email</th>
-            <th className="px-4 py-2 text-left">Status</th>
-            <th className="px-4 py-2 text-right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id} className="border-t">
-              <td className="px-4 py-2">{user.email}</td>
-              <td className="px-4 py-2">{user.kyc_verified ? "✅" : "❌"}</td>
-              <td className="px-4 py-2 text-right">
-                <Button onClick={() => toggleKYC(user.id, !user.kyc_verified)}>
-                  {user.kyc_verified ? "Revoke" : "Verify"}
-                </Button>
-              </td>
+    <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead>
+            <tr className="bg-gray-50/50 border-b border-gray-100">
+              <th className="px-6 py-4 text-left text-xs font-black uppercase tracking-widest text-gray-400">User Email</th>
+              <th className="px-6 py-4 text-left text-xs font-black uppercase tracking-widest text-gray-400">KYC Status</th>
+              <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-widest text-gray-400">Management</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {users.map((user) => (
+              <tr key={user.id} className="hover:bg-gray-50/30 transition-colors">
+                <td className="px-6 py-4 font-bold text-gray-700">{user.email}</td>
+                <td className="px-6 py-4">
+                  {user.kyc_verified ? (
+                    <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">Verified</span>
+                  ) : (
+                    <span className="bg-gray-100 text-gray-400 px-3 py-1 rounded-full text-[10px] font-black uppercase">Pending</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <Button 
+                    isLoading={togglingId === user.id}
+                    onClick={() => toggleKYC(user.id, !user.kyc_verified)}
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                        user.kyc_verified 
+                        ? "bg-white border border-red-100 text-red-500 hover:bg-red-50" 
+                        : "bg-brand text-white shadow-lg shadow-brand/20"
+                    }`}
+                  >
+                    {user.kyc_verified ? "Revoke Access" : "Verify User"}
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function AdminTableSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-16 bg-gray-100 rounded-2xl w-full" />
+      ))}
     </div>
   );
 }
