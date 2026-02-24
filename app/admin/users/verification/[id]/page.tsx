@@ -5,78 +5,79 @@ import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/Button";
 import UserNavbar from "@/components/layout/UserNavbar";
-import { ShieldAlert, CheckCircle, XCircle } from "lucide-react";
+import { ShieldCheck, CheckCircle, XCircle, FileText } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function VerificationDetail() {
+export default function VerificationDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { data: user, mutate } = useSWR(`/api/users/${id}`, fetcher);
 
-  const handleAction = async (status: "APPROVED" | "DECLINED") => {
-    const res = await fetch(`/api/admin/verify-submission`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: id, status }),
-    });
-    if (res.ok) {
-      mutate();
-      router.refresh();
+  const handleAction = async (decision: "APPROVED" | "REJECTED") => {
+    try {
+      const res = await fetch(`/api/admin/process-kyc`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id, status: decision }),
+      });
+      if (res.ok) {
+        mutate(); // Refresh local data
+        router.refresh();
+      }
+    } catch (err) {
+      alert("Action failed. Please try again.");
     }
   };
 
-  if (!user) return <div className="p-10 text-center">Loading details...</div>;
+  if (!user) return <div className="p-20 text-center font-black text-gray-400 uppercase tracking-widest">Loading User Profile...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <UserNavbar />
       <main className="max-w-4xl mx-auto p-8">
         <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-xl">
-          <h2 className="text-2xl font-black mb-6">User Verification Profile</h2>
-          
-          <div className="grid grid-cols-2 gap-8 mb-10">
+          <div className="flex justify-between items-start mb-10">
             <div>
-              <label className="text-[10px] font-black uppercase text-gray-400">Email Address</label>
-              <p className="text-lg font-bold">{user.email}</p>
+              <h2 className="text-3xl font-black text-gray-900 tracking-tight">User Details</h2>
+              <p className="text-gray-500">{user.email}</p>
             </div>
-            <div>
-              <label className="text-[10px] font-black uppercase text-gray-400">Current Level</label>
-              <p className="text-lg font-bold">Level {user.verification_level}</p>
+            <div className="bg-brand/5 px-6 py-3 rounded-2xl border border-brand/10">
+              <span className="block text-[10px] font-black text-brand uppercase">Current Status</span>
+              <span className="text-lg font-black text-gray-700 uppercase">Level {user.verification_level}</span>
             </div>
           </div>
 
-          {/* Submission Check */}
           {user.pending_submission ? (
-            <div className="bg-brand/5 border border-brand/10 rounded-3xl p-6">
-              <div className="flex items-center gap-3 mb-4 text-brand">
-                <ShieldAlert size={24} />
-                <h3 className="font-black uppercase tracking-widest text-sm">Pending Submission Detected</h3>
-              </div>
-              
-              {/* Render your KYC document images/details here */}
-              <div className="aspect-video bg-gray-100 rounded-2xl mb-6 flex items-center justify-center">
-                 <p className="text-gray-400 text-sm italic">[KYC Document Preview]</p>
+            <div className="space-y-6">
+              <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100 flex items-center gap-4">
+                <FileText className="text-amber-600" size={32} />
+                <div>
+                  <h3 className="font-black text-amber-900">Pending KYC Submission</h3>
+                  <p className="text-sm text-amber-700">Submitted on {new Date(user.pending_submission.created_at).toLocaleDateString()}</p>
+                </div>
               </div>
 
+              {/* Approve/Decline Section */}
               <div className="flex gap-4">
                 <Button 
                   onClick={() => handleAction("APPROVED")}
-                  className="flex-1 bg-green-600 text-white rounded-2xl py-4 font-black flex items-center justify-center gap-2 hover:bg-green-700"
+                  className="flex-1 bg-green-600 text-white rounded-2xl py-5 font-black flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-lg shadow-green-200"
                 >
-                  <CheckCircle size={18} /> Approve Submission
+                  <CheckCircle size={20} /> Approve Submission
                 </Button>
                 <Button 
-                  onClick={() => handleAction("DECLINED")}
-                  className="flex-1 bg-white border-2 border-red-100 text-red-500 rounded-2xl py-4 font-black flex items-center justify-center gap-2 hover:bg-red-50"
+                  onClick={() => handleAction("REJECTED")}
+                  className="flex-1 bg-white border-2 border-red-100 text-red-500 rounded-2xl py-5 font-black flex items-center justify-center gap-2 hover:bg-red-50 transition-all"
                 >
-                  <XCircle size={18} /> Decline
+                  <XCircle size={20} /> Decline
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-              <p className="text-gray-500 font-medium">No pending submissions for this user.</p>
+            <div className="text-center py-16 bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
+              <ShieldCheck size={48} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500 font-bold">No pending submissions found for this user.</p>
             </div>
           )}
         </div>
