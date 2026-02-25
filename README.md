@@ -170,10 +170,8 @@ kyc_submissions (
   tier_requested INT,
   id_image_url TEXT,
   selfie_url TEXT,
-  bvn_vnin_last_4 TEXT,
   submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  processed_at TIMESTAMP WITH TIME ZONE,
-  processed_by UUID REFERENCES users(id) -- Admin who handled it
+  status TEXT
 );
 
 -- Wallet Transactions

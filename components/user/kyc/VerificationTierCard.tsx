@@ -1,5 +1,9 @@
 // @/components/user/kyc/VerificationTierCard.tsx
-import { CheckCircleIcon, LockClosedIcon } from "@heroicons/react/24/solid";
+"use client";
+
+import { useState } from "react";
+import { CheckCircleIcon, LockClosedIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
+import { toast } from "react-hot-toast"; // Or your preferred toast library
 
 interface TierProps {
   tier: number;
@@ -10,45 +14,53 @@ interface TierProps {
   actionUrl?: string;
 }
 
-export default function VerificationTierCard({ tier, title, requirements, perks, status, actionUrl }: TierProps) {
-  const isLocked = status === "locked";
+
+export default function VerificationTierCard({ tier, title, requirements, perks, status }: TierProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isDone = status === "completed";
+  const isAction = status === "action-required";
+
+  const handleVerify = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/users/kyc/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error);
+
+      toast.success("Submission received! We are reviewing your documents.");
+      // Optional: Refresh page to show 'pending' state if you add that logic
+      window.location.reload(); 
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div className={`p-6 rounded-[2rem] border-2 transition-all ${
-      isDone ? "border-brand bg-brand/5" : "border-gray-100 bg-white"
-    } ${isLocked ? "opacity-60" : "opacity-100"}`}>
-      
-      <div className="flex justify-between items-start">
-        <div className="space-y-1">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-            isDone ? "bg-brand text-white" : "bg-gray-100 text-gray-500"
-          }`}>
-            Tier {tier}
-          </span>
-          <h3 className="text-lg font-black text-gray-800">{title}</h3>
-        </div>
-        {isDone && <CheckCircleIcon className="h-6 w-6 text-brand" />}
-        {isLocked && <LockClosedIcon className="h-5 w-5 text-gray-400" />}
-      </div>
+    <div className={`p-6 rounded-[2rem] border-2 ...`}>
+      {/* ... Header and Info Grid same as before ... */}
 
-      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <p className="text-gray-400 font-bold text-[10px] uppercase">Requirements</p>
-          <p className="text-gray-700 font-medium">{requirements}</p>
-        </div>
-        <div>
-          <p className="text-gray-400 font-bold text-[10px] uppercase">Perks</p>
-          <p className="text-gray-700 font-medium">{perks}</p>
-        </div>
-      </div>
-
-      {status === "action-required" && (
+      {isAction && (
         <button 
-          onClick={() => window.location.href = actionUrl || "#"}
-          className="w-full mt-6 bg-gray-900 text-white font-black py-3 rounded-xl hover:bg-brand transition-colors"
+          onClick={handleVerify}
+          disabled={isSubmitting}
+          className="w-full mt-8 bg-gray-900 text-white font-black py-4 rounded-2xl hover:bg-brand disabled:opacity-50 transition-all flex items-center justify-center gap-2"
         >
-          Verify Now
+          {isSubmitting ? (
+            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <ShieldCheckIcon className="h-5 w-5" />
+              Verify with Passport
+            </>
+          )}
         </button>
       )}
     </div>

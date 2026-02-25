@@ -1,16 +1,22 @@
-// @/app/dashboard/verify/page.tsx
 "use client";
 
 import { useUser } from "@/context/UserContext";
-import { CheckCircleIcon, ShieldCheckIcon, LockClosedIcon } from "@heroicons/react/24/solid";
+import { ShieldCheckIcon } from "@heroicons/react/24/solid";
 import VerificationTierCard from "@/components/user/kyc/VerificationTierCard";
+
+// Map levels to readable names
+const LEVEL_NAMES: Record<number, string> = {
+  1: "Basic Access",
+  2: "Silver Member",
+  3: "Gold (Enterprise)",
+};
 
 export default function KYCPage() {
   const { user, loading } = useUser();
 
   if (loading) return <KYCSkeleton />;
 
-  // Current level from your DB (1, 2, or 3)
+  // Default to 1 since it's passed on sign up
   const currentLevel = user?.verification_level || 1;
 
   return (
@@ -27,7 +33,12 @@ export default function KYCPage() {
         <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase text-gray-400">Current Standing</p>
-            <h2 className="text-xl font-black text-brand">Tier {currentLevel} Verified</h2>
+            <h2 className="text-xl font-black text-brand">
+               {LEVEL_NAMES[currentLevel]} Verified
+            </h2>
+            <p className="text-xs text-green-600 font-medium flex items-center mt-1">
+              <ShieldCheckIcon className="h-3 w-3 mr-1" /> Enterprise Secured
+            </p>
           </div>
           <div className="h-12 w-12 bg-brand/10 rounded-full flex items-center justify-center">
             <ShieldCheckIcon className="h-6 w-6 text-brand" />
@@ -36,26 +47,29 @@ export default function KYCPage() {
 
         {/* Tier Grid */}
         <div className="space-y-4">
+          {/* Tier 1: Always Completed for existing users */}
           <VerificationTierCard 
             tier={1}
-            title="Basic Access"
-            status={currentLevel >= 1 ? "completed" : "action-required"}
+            title={LEVEL_NAMES[1]}
+            status="completed"
             requirements="Phone Number & Email"
             perks="Join public circles, max ₦50k contribution"
           />
           
+          {/* Tier 2: Actionable if at level 1, Completed if at 2 or 3 */}
           <VerificationTierCard 
             tier={2}
-            title="Silver Member"
-            status={currentLevel >= 2 ? "completed" : currentLevel === 1 ? "action-required" : "locked"}
+            title={LEVEL_NAMES[2]}
+            status={currentLevel >= 2 ? "completed" : "action-required"}
             requirements="BVN or vNIN Verification"
             perks="Create circles, max ₦500k contribution"
             actionUrl="/dashboard/verify/tier-2"
           />
 
+          {/* Tier 3: Locked until Tier 2 is done */}
           <VerificationTierCard 
             tier={3}
-            title="Gold (Enterprise)"
+            title={LEVEL_NAMES[3]}
             status={currentLevel >= 3 ? "completed" : currentLevel === 2 ? "action-required" : "locked"}
             requirements="Government ID & Liveness Selfie"
             perks="Unlimited contributions & Instant Payouts"
