@@ -24,6 +24,9 @@ export default function VerificationTierCard({ tier, title, requirements, perks,
   const [isVerifying, setIsVerifying] = useState(false);
   
   const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
+  
+  const showModal = (title: string, message: string, type: "success" | "error") => setModal({ isOpen: true, title, message, type });
+  
 
   const handleVerify = async () => {
     setIsVerifying(true);
