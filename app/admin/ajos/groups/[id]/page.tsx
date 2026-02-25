@@ -1,4 +1,4 @@
-// app/admin/ajos/[id]/page.tsx
+// app/admin/ajos/groups/[id]/page.tsx
 import UserNavbar from "@/components/layout/UserNavbar";
 import { getSupabaseServer } from "@/lib/supabaseServerClient";
 import { notFound } from "next/navigation";

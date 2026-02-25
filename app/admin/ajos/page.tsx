@@ -66,7 +66,7 @@ export default function AjoManagementPage() {
                 </Button>
 
                 <Link 
-                  href={`/admin/ajos/${ajo.id}`}
+                  href={`/admin/ajos/groups/${ajo.id}`}
                   className="p-2 bg-gray-50 text-gray-400 hover:text-brand hover:bg-brand/5 rounded-xl transition-all"
                 >
                   <Settings size={20} />
