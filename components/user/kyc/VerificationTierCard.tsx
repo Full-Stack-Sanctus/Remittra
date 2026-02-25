@@ -3,7 +3,8 @@
 
 import { useState } from "react";
 import { CheckCircleIcon, LockClosedIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
-import { toast } from "react-hot-toast"; // Or your preferred toast library
+import Button from "@/components/Button";
+import Modal from "@/components/Modal";
 
 interface TierProps {
   tier: number;
@@ -16,12 +17,16 @@ interface TierProps {
 
 
 export default function VerificationTierCard({ tier, title, requirements, perks, status }: TierProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+    
   const isDone = status === "completed";
   const isAction = status === "action-required";
+  
+  const [isVerifying, setIsVerifying] = useState(false);
+  
+  const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
 
   const handleVerify = async () => {
-    setIsSubmitting(true);
+    setIsVerifying(true);
     try {
       const res = await fetch("/api/users/kyc/submit", {
         method: "POST",
@@ -31,15 +36,18 @@ export default function VerificationTierCard({ tier, title, requirements, perks,
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) {
+        showModal("Request Failed", data.error || "Something went wrong", "error");
+        return;
+      }
 
-      toast.success("Submission received! We are reviewing your documents.");
+      showModal("Success", "Verification Submission successfull", "success");
       // Optional: Refresh page to show 'pending' state if you add that logic
       window.location.reload(); 
     } catch (err: any) {
-      toast.error(err.message || "Failed to submit");
+      showModal("Connection Error", "Check your internet and try again.", "error");
     } finally {
-      setIsSubmitting(false);
+      setIsVerifying(false);
     }
   };
 
@@ -48,9 +56,9 @@ export default function VerificationTierCard({ tier, title, requirements, perks,
       {/* ... Header and Info Grid same as before ... */}
 
       {isAction && (
-        <button 
+        <Button 
+          isLoading={isVerifying}
           onClick={handleVerify}
-          disabled={isSubmitting}
           className="w-full mt-8 bg-gray-900 text-white font-black py-4 rounded-2xl hover:bg-brand disabled:opacity-50 transition-all flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
