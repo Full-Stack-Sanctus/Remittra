@@ -12,7 +12,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function VerificationDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { data: user, mutate } = useSWR(`/api/users/${id}`, fetcher);
+  const { data: user, mutate } = useSWR(`/api/admin/users/verification/${id}`, fetcher);
 
   const handleAction = async (decision: "APPROVED" | "REJECTED") => {
     try {
