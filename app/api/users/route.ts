@@ -5,6 +5,6 @@ export async function GET() {
   const supabaseServer = getSupabaseServer();
   const { data } = await supabaseServer
     .from("users")
-    .select("id, email, kyc_verified");
+    .select("id, email, kyc_verified, verification_level");
   return NextResponse.json(data || []);
 }
