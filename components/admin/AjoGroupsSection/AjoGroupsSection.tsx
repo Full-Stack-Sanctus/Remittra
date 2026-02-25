@@ -23,7 +23,7 @@ export default function AjoGroupsSection() {
         {previewAjos.map((ajo) => (
           <Link 
             key={ajo.id} 
-            href={`/admin/ajos/${ajo.id}`}
+            href={`/admin/ajos/groups/${ajo.id}`}
             className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col justify-between group hover:border-brand/30 transition-all hover:shadow-md"
           >
             <div className="flex justify-between items-start">
