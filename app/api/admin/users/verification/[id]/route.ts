@@ -1,6 +1,6 @@
 // api/admin/users/verification/[id]/route.ts
 
-import { getSupabaseServer } from "@/lib/supabaseServer";
+import { getSupabaseServer } from "@/lib/supabaseServerClient";
 import { NextResponse, NextRequest } from "next/server";
 
 type RouteParams = {
