@@ -17,6 +17,10 @@ export async function GET(
   try {
     // 1. Security Check
     const { data: { user: authUser } } = await supabase.auth.getUser();
+    
+    // Log for debugging (Check your terminal, not browser console)
+    console.log("Checking Admin Access for:", authUser?.email);
+    
     const { data: adminRecord } = await supabase
       .from("users")
       .select("is_admin")
