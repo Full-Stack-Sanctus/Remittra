@@ -3,71 +3,55 @@
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { NextResponse, NextRequest } from "next/server";
 
-// Define the shape of the params
 type RouteParams = {
   params: Promise<{ id: string }>;
 };
 
 export async function GET(
   request: NextRequest,
-  { params }: RouteParams // Params is now a Promise
+  { params }: RouteParams
 ) {
   const supabase = getSupabaseServer();
-  
-  // 1. Await the params to get the ID
   const { id: userId } = await params;
 
   try {
-    // 2. Security Check: Verify Admin
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    // 1. Security Check
+    const { data: { user: authUser } } = await supabase.auth.getUser();
     const { data: adminRecord } = await supabase
       .from("users")
       .select("is_admin")
-      .eq("id", authUser.id)
+      .eq("id", authUser?.id)
       .single();
 
     if (!adminRecord?.is_admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // 3. Fetch User and Pending Submission
-    const { data, error } = await supabase
+    // 2. Fetch User (Verification Level is here)
+    const { data: user, error: userError } = await supabase
       .from("users")
-      .select(`
-        id, 
-        email, 
-        verification_level,
-        kyc_submissions (
-          id,
-          status,
-          tier_requested,
-          id_image_url,
-          created_at
-        )
-      `)
+      .select("id, email, verification_level")
       .eq("id", userId)
-      .eq("kyc_submissions.status", "pending")
-      .maybeSingle();
+      .single();
 
-    if (error) throw error;
-
-    // Handle case where user exists but has no pending submission
-    if (!data) {
-       const { data: basicUser } = await supabase
-        .from("users")
-        .select("id, email, verification_level")
-        .eq("id", userId)
-        .single();
-        
-       return NextResponse.json(basicUser);
+    if (userError || !user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(data);
+    // 3. Fetch ONLY the pending submission separately 
+    // This prevents the join from breaking the user data object
+    const { data: submission } = await supabase
+      .from("kyc_submissions")
+      .select("id, status, tier_requested, id_image_url, created_at")
+      .eq("user_id", userId)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    // 4. Combine and return a flat object
+    return NextResponse.json({
+      ...user,
+      pending_submission: submission || null
+    });
     
   } catch (err) {
     console.error("Fetch error:", err);
