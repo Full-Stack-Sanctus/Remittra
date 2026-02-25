@@ -153,7 +153,8 @@ users (
   is_admin boolean,
   verification_level INT,
   kyc_status TEXT,
-  kyc_notes TEXT
+  kyc_notes TEXT,
+  passportUrl TEXT
 );
 
 -- Wallets
