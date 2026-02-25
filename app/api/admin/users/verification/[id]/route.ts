@@ -16,15 +16,21 @@ export async function GET(
 
   try {
     // 1. Security Check
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    // const { data: { user: authUser } } = await supabase.auth.getUser();
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     
     // Log for debugging (Check your terminal, not browser console)
-    console.log("Checking Admin Access for:", authUser?.email);
+    console.log("Checking Admin Access for:", user?.email);
     
     const { data: adminRecord } = await supabase
       .from("users")
       .select("is_admin")
-      .eq("id", authUser?.id)
+      .eq("id", user?.id)
       .single();
 
     if (!adminRecord?.is_admin) {
