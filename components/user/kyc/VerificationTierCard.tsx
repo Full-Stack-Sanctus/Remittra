@@ -64,7 +64,7 @@ export default function VerificationTierCard({ tier, title, requirements, perks,
           onClick={handleVerify}
           className="w-full mt-8 bg-gray-900 text-white font-black py-4 rounded-2xl hover:bg-brand disabled:opacity-50 transition-all flex items-center justify-center gap-2"
         >
-          {isSubmitting ? (
+          {isVerifying ? (
             <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
             <>
