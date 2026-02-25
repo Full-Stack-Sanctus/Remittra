@@ -69,7 +69,7 @@ export default function VerificationTierCard({ tier, title, requirements, perks,
               Verify with Passport
             </>
           )}
-        </button>
+        </Button>
       )}
     </div>
   );
