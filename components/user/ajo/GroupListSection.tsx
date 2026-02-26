@@ -80,7 +80,7 @@ export default function GroupListSection() {
               <div className="relative z-10">
                 <div className="mb-8">
                   <h3 className="text-2xl font-black text-gray-900 group-hover:text-brand transition-colors">
-                    {ajo.name || "Unnamed Group"}
+                    {ajo.ajo_name || "Unnamed Group"}
                   </h3>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                     Verified Membership
