@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     .from("user_ajos")
     .select(`your_contribution, payout_due, is_head, ajos (*)`)
     .eq("user_id", user.id);
+    .eq("is_head", false);
 
   // 2. Incoming Requests (I am the Head, others want to join)
   const { data: incomingRequests } = await supabase
