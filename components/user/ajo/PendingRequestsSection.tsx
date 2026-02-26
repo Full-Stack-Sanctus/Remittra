@@ -1,3 +1,5 @@
+// @/components/user/ajo/PendingRequestsSection.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
