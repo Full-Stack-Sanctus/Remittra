@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { Mail, Clock, CheckCircle2, XCircle } from "lucide-react";
-import { Mail, Clock } from "lucide-react";
 import Modal from "@/components/Modal";
 import Button from "@/components/Button";
 
