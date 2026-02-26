@@ -197,7 +197,7 @@ ajos (
   is_clicked BOOLEAN DEFAULT FALSE
 );
 
---ajo_invite (
+--ajo_invites (
   id uuid PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   user_email TEXT NOT NULL,

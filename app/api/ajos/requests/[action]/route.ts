@@ -4,48 +4,60 @@ import { getSupabaseServer } from "@/lib/supabaseServerClient";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { action: string } }
+  { params }: { params: Promise<{ action: string }> } // Params is a Promise
 ) {
-  const { action } = params;
-  const { requestId } = await req.json();
-  const supabase = await getSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const { action } = await params; // Await the promise here
+    const { requestId } = await req.json();
+    const supabase = await getSupabaseServer();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // 1. Fetch the invite and verify the current user is the "Head" of that Ajo
-  const { data: invite, error: fetchError } = await supabase
-    .from("ajo_invites")
-    .select("*, ajos(id, creator_id)")
-    .eq("id", requestId)
-    .single();
+    // 1. Fetch invite and verify the current user is the "Head" (created_by)
+    const { data: invite, error: fetchError } = await supabase
+      .from("ajo_invites")
+      .select("*")
+      .eq("id", requestId)
+      .single();
 
-  if (fetchError || !invite) return NextResponse.json({ error: "Invite not found" }, { status: 404 });
-  
-  // Security check: Only the Ajo creator/head can approve/reject
-  if (invite.ajos.creator_id !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (fetchError || !invite) {
+      return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+    }
+    
+    // Security: Only the person who created the invite (Admin) can approve/decline
+    if (invite.created_by !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Map the action to your DB schema: 'approved' or 'declined'
+    const newStatus = action === "approve" ? "approved" : "declined";
+
+    if (newStatus === "approved") {
+      // Enterprise safety: Use an RPC or a manual check to prevent double-entry
+      const { error: joinError } = await supabase.from("user_ajos").insert({
+        user_id: invite.user_id,
+        ajo_id: invite.ajo_id,
+        is_head: false,
+      });
+
+      if (joinError && joinError.code !== '23505') { // Ignore unique constraint errors
+        return NextResponse.json({ error: "Failed to join user" }, { status: 500 });
+      }
+    }
+
+    // Update the invite status
+    const { error: updateError } = await supabase
+      .from("ajo_invites")
+      .update({ status: newStatus })
+      .eq("id", requestId);
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({ success: true, status: newStatus });
+
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-
-  const newStatus = action === "approve" ? "accepted" : "rejected";
-
-  if (action === "approve") {
-    // Atomic Operation: Update invite AND join the group
-    const { error: joinError } = await supabase.from("user_ajos").insert({
-      user_id: invite.user_id,
-      ajo_id: invite.ajo_id,
-      is_head: false,
-    });
-
-    if (joinError) return NextResponse.json({ error: "Failed to join user" }, { status: 500 });
-  }
-
-  const { error: updateError } = await supabase
-    .from("ajo_invites")
-    .update({ status: newStatus })
-    .eq("id", requestId);
-
-  if (updateError) return NextResponse.json({ error: "Update failed" }, { status: 500 });
-
-  return NextResponse.json({ success: true });
 }
