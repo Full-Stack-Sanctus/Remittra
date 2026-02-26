@@ -8,7 +8,7 @@ import Link from "next/link";
 // Define the simplified enterprise type
 interface AjoMembership {
   id: string;
-  name: string;
+  ajo_name: string;
 }
 
 export default function GroupListSection() {

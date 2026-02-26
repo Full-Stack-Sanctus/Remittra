@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   // 1. Memberships (Groups I'm already in)
   const { data: joinedData } = await supabase
     .from("user_ajos")
-    .select(`your_contribution, payout_due, is_head, ajos (*)`)
+    .select(`ajo_name, your_contribution, payout_due, is_head, ajos (*)`)
     .eq("user_id", user.id)
     .eq("is_head", false);
 
