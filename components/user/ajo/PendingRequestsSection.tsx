@@ -2,68 +2,95 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Mail, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { Mail, Clock } from "lucide-react";
 import Modal from "@/components/Modal";
 import Button from "@/components/Button";
 
-export default function PendingRequestsSection() {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState({ isOpen: false, title: "", message: "", type: "success" as "success" | "error" });
 
-  const fetchRequests = async () => {
-    try {
-      const res = await fetch("/api/ajos/memberships");
-      if (res.ok) {
-        const data = await res.json();
-        setRequests(data.requests || []);
-      }
-    } finally {
-      setLoading(false);
+export default function PendingRequestsSection() {
+  const [data, setData] = useState({ incomingRequests: [], sentRequests: [] });
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    const res = await fetch("/api/ajos/memberships");
+    if (res.ok) {
+      const json = await res.json();
+      setData({ incomingRequests: json.incomingRequests, sentRequests: json.sentRequests });
     }
+    setLoading(false);
   };
 
-  useEffect(() => { fetchRequests(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleAction = async (requestId: string, action: 'approve' | 'reject') => {
     const res = await fetch(`/api/ajos/requests/${action}`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId }),
     });
-    if (res.ok) {
-      setModal({ isOpen: true, title: "Success", message: `Request ${action}ed successfully`, type: "success" });
-      fetchRequests();
-    }
+    if (res.ok) fetchData();
   };
 
-  if (loading || requests.length === 0) return null;
+  if (loading) return <div className="animate-pulse h-20 bg-gray-100 rounded-xl" />;
 
   return (
-    <section>
-      <Modal {...modal} onClose={() => setModal({ ...modal, isOpen: false })} />
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-amber-100 text-amber-600 rounded-lg"><Clock size={20}/></div>
-        <h2 className="text-2xl font-black text-gray-800">Pending Approvals</h2>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {requests.map((req: any) => (
-          <div key={req.id} className="bg-white border-2 border-dashed border-gray-200 p-6 rounded-[2rem] hover:border-brand/40 transition-all">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                <Mail size={18} />
+    <div className="space-y-10">
+      {/* SECTION 1: INCOMING (For Admins) */}
+      {data.incomingRequests.length > 0 && (
+        <section>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Clock className="text-amber-500" /> Pending Approvals
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.incomingRequests.map((req: any) => (
+              <div key={req.id} className="bg-white border p-5 rounded-2xl shadow-sm">
+                <p className="text-sm font-medium text-gray-500">{req.user_email} wants to join</p>
+                <p className="font-bold text-gray-800 mb-4">{req.ajos?.name}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleAction(req.id, 'approve')} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm">Accept</button>
+                  <button onClick={() => handleAction(req.id, 'reject')} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm">Reject</button>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">New Request from</p>
-                <p className="text-sm font-black text-gray-800 truncate max-w-[180px]">{req.user_email}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => handleAction(req.id, 'approve')} className="flex-1 bg-brand text-white text-xs py-2 rounded-xl">Accept</Button>
-              <button onClick={() => handleAction(req.id, 'reject')} className="flex-1 bg-gray-100 text-gray-600 text-xs py-2 rounded-xl font-bold">Reject</button>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </section>
+        </section>
+      )}
+
+      {/* SECTION 2: MY ACTIVITY (Sent Requests) */}
+      <section>
+        <h2 className="text-xl font-bold mb-4">My Join Requests</h2>
+        <div className="bg-white rounded-2xl border overflow-hidden">
+          {data.sentRequests.length === 0 ? (
+            <p className="p-6 text-gray-400 text-center">No recent activity</p>
+          ) : (
+            <div className="divide-y">
+              {data.sentRequests.map((req: any) => (
+                <div key={req.id} className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-gray-800">{req.ajos?.name}</p>
+                    <p className="text-xs text-gray-500">Requested on {new Date(req.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <StatusBadge status={req.status} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const styles: any = {
+    pending: "bg-amber-100 text-amber-700",
+    accepted: "bg-green-100 text-green-700",
+    rejected: "bg-red-100 text-red-700",
+  };
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${styles[status]}`}>
+      {status}
+    </span>
   );
 }
