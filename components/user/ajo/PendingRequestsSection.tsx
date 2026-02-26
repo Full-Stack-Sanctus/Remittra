@@ -1,11 +1,7 @@
-// @/components/user/ajo/PendingRequestsSection.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, CheckCircle2, XCircle, Mail } from "lucide-react";
-import Modal from "@/components/Modal";
-import Button from "@/components/Button";
-
+import { Clock, CheckCircle2, Mail } from "lucide-react";
 
 export default function PendingRequestsSection() {
   const [data, setData] = useState({ incomingRequests: [], sentRequests: [] });
@@ -31,12 +27,18 @@ export default function PendingRequestsSection() {
   useEffect(() => { fetchData(); }, []);
 
   const handleAction = async (requestId: string, action: 'approve' | 'reject') => {
-    const res = await fetch(`/api/ajos/requests/${action}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requestId }),
-    });
-    if (res.ok) fetchData();
+    try {
+      const res = await fetch(`/api/ajos/requests/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId }),
+      });
+      if (res.ok) {
+        await fetchData(); // Refresh lists
+      }
+    } catch (error) {
+      console.error("Action failed:", error);
+    }
   };
 
   if (loading) return <div className="animate-pulse h-32 bg-gray-100 rounded-[2rem] w-full" />;
@@ -65,7 +67,7 @@ export default function PendingRequestsSection() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleAction(req.id, 'approve')} 
-                    className="flex-1 bg-brand bg-black text-white text-xs py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity"
+                    className="flex-1 bg-black text-white text-xs py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity"
                   >
                     Accept
                   </button>
@@ -100,8 +102,8 @@ export default function PendingRequestsSection() {
                   <div>
                     <p className="font-black text-gray-800">{req.ajos?.name || "Unknown Group"}</p>
                     <p className="text-xs font-bold text-gray-400 uppercase">
-                      {/* SAFE DATE CHECK */}
-                      Requested: {req.created_at ? new Date(req.created_at).toLocaleDateString() : 'Date unavailable'}
+                      {/* FIX: Robust Date Parsing */}
+                      Requested: {formatSafeDate(req.created_at)}
                     </p>
                   </div>
                   <StatusBadge status={req.status} />
@@ -113,6 +115,13 @@ export default function PendingRequestsSection() {
       </section>
     </div>
   );
+}
+
+// Helper to prevent "toLocaleString of undefined"
+function formatSafeDate(dateString: string | null) {
+  if (!dateString) return "Date unavailable";
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleDateString();
 }
 
 function StatusBadge({ status }: { status: string }) {
