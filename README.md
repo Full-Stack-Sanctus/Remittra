@@ -111,13 +111,33 @@ BEGIN
 END;
 $$;
 
--- 2. Re-create the trigger
+-- the trigger
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_setup();
 
 ```
 
+#### 2. automatically update name of ajo in ajo_name column after an every insert in user_ajos
+
+```sql
+CREATE OR REPLACE FUNCTION sync_ajo_name()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Look up the name from the 'ajos' table using the new record's ajo_id
+  SELECT name INTO NEW.ajo_name
+  FROM ajos
+  WHERE id = NEW.ajo_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- the triggert
+CREATE TRIGGER trigger_sync_ajo_name
+BEFORE INSERT OR UPDATE ON user_ajos
+FOR EACH ROW
+EXECUTE FUNCTION sync_ajo_name();
 ---
 
 
@@ -212,6 +232,8 @@ ajos (
 user_ajos (
   ajo_id uuid REFERENCES ajos(id),
   user_id uuid REFERENCES users(id),
+  ajo_name TEXT NOT NULL,
+  is_head,
   position int,
   PRIMARY KEY (ajo_id, user_id)
 );
