@@ -73,7 +73,7 @@ export default function GroupListSection() {
           <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
             <TrendingUp className="text-gray-300" />
           </div>
-          <p className="text-gray-400 font-bold">No active memberships found.</p>
+          <p className="text-gray-400 font-bold">No groups you joind via invitation found.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
