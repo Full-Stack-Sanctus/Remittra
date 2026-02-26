@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Fetch requests for groups the user CREATED (user is the lead)
     const { data: requestsData } = await supabase
-      .from("ajo_requests")
+      .from("ajo_invites")
       .select(`*`)
       .eq("created_by", user.id)
       .eq("status", "pending");
