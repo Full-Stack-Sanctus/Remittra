@@ -1,8 +1,7 @@
 import { getSupabaseServer } from "@/lib/supabaseServerClient";
 import TransactionTable from '@/components/user/wallet/transactions/TransactionTable';
 import FilterTabs from '@/components/user/wallet/transactions/FilterTabs';
-import UserNavbar from "@/components/layout/UserNavbar"; // Imported as requested
-import { useRouter } from "next/navigation";
+import UserNavbar from "@/components/layout/UserNavbar";
 
 
 export default async function TransactionsPage({
@@ -13,11 +12,10 @@ export default async function TransactionsPage({
   const supabase = await getSupabaseServer();
   const { data: { user }, error } = await supabase.auth.getUser();
   
-  const router = useRouter();
 
   if (error || !user) {
     // Redirect to login if the server finds no valid user
-    router.push('/login');
+    redirect('/login');
   }
   
   const currentType = searchParams.type || 'all';
