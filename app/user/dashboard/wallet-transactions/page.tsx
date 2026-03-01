@@ -2,6 +2,7 @@ import { getSupabaseServer } from "@/lib/supabaseServerClient";
 import TransactionTable from '@/components/user/wallet/transactions/TransactionTable';
 import FilterTabs from '@/components/user/wallet/transactions/FilterTabs';
 import UserNavbar from "@/components/layout/UserNavbar";
+import { redirect } from "next/navigation";
 
 
 export default async function TransactionsPage({
