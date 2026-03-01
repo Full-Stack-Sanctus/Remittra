@@ -71,7 +71,7 @@ export default async function TransactionsPage({
 
           {/* Optional: Add a back to dashboard button for better UX */}
           <div className="mt-8 text-center md:text-left">
-             <a href="/user/dashboard" className="text-sm text-blue-600 hover:underline">
+             <a href="/user" className="text-sm text-blue-600 hover:underline">
                ← Back to Wallet Overview
              </a>
           </div>
