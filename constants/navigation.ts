@@ -1,5 +1,5 @@
 // constants/navigation.ts
-import { Home, Users, Settings, UserCircle, ShieldCheck, UsersRound } from "lucide-react";
+import { Home, Users, Settings, UserCircle, ShieldCheck, UsersRound, Receipt } from "lucide-react";
 
 export type Role = "admin" | "user";
 
@@ -42,6 +42,12 @@ export const MENU_ITEMS: MenuItemConfig[] = [
     icon: ShieldCheck,
     href: "/admin/dashboard",
     allowedRoles: ["admin"],
+  },
+  {
+    label: "Financial History",
+    icon: Receipt,
+    href: "/user/dashboard/wallet-transactions",
+    allowedRoles: ["user"], // Admins might not need to verify themselves
   },
   {
     label: "Identity Verification",

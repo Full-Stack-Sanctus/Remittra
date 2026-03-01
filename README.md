@@ -82,9 +82,7 @@ Built with **Next.js, TypeScript, Tailwind CSS, and Supabase**, the app demonstr
 ### Databse Functions
 
 #### -- 1. Create the function to add new users to auth and that inserts the wallet
-
 ```sql
-
 CREATE OR REPLACE FUNCTION public.handle_new_user_setup()
 RETURNS trigger 
 LANGUAGE plpgsql 
@@ -115,11 +113,9 @@ $$;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_setup();
-
 ```
 
 #### 2. automatically update name of ajo in ajo_name column after an every insert in user_ajos
-
 ```sql
 CREATE OR REPLACE FUNCTION sync_ajo_name()
 RETURNS TRIGGER AS $$
@@ -139,12 +135,9 @@ BEFORE INSERT OR UPDATE ON user_ajos
 FOR EACH ROW
 EXECUTE FUNCTION sync_ajo_name();
 ---
+```
 
-
-### Edge Functions 
-
-#### Create a function to clear expired invites
-
+#### 3. Create a function to clear expired invites
 ```sql
 CREATE OR REPLACE FUNCTION clear_expired_ajos_invites()
 RETURNS void AS $$
@@ -157,10 +150,59 @@ BEGIN
     WHERE invite_expires_at < NOW();
 END;
 $$ LANGUAGE plpgsql;
+```
 
+#### 4. Universal notification functions
+```sql
+CREATE OR REPLACE FUNCTION public.push_user_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+  payload jsonb;
+  target_user_id uuid;
+BEGIN
+  -- Logic to find the owner of the notification
+  -- If table is 'messages', look for 'receiver_id', otherwise 'user_id'
+  CASE TG_TABLE_NAME
+    WHEN 'messages' THEN target_user_id := NEW.receiver_id;
+    WHEN 'group_invites' THEN target_user_id := NEW.invited_user_id;
+    ELSE target_user_id := NEW.user_id;
+  END CASE;
+
+  -- Build a standard envelope so the Frontend always knows the format
+  payload := jsonb_build_object(
+    'type', TG_TABLE_NAME, 
+    'action', TG_OP, -- INSERT, UPDATE, or DELETE
+    'data', to_jsonb(NEW),
+    'metadata', jsonb_build_object('sent_at', now())
+  );
+
+  PERFORM realtime.send(
+    payload,
+    'SYSTEM_NOTIFICATION',
+    'user:' || target_user_id::text,
+    true
+  );
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- the trigger for wallet_transactions insert notifications
+CREATE TRIGGER on_wallet_transaction_insert
+AFTER INSERT ON public.wallet_transactions
+FOR EACH ROW 
+EXECUTE FUNCTION public.push_user_notification();
 ```
 
 ---
+
+
+### Edge Functions 
+
+
+
+---
+
 
 ### Database Schema (Simplified)
 
@@ -249,10 +291,27 @@ wallet_transactions (
 
 ---
 
+
+### Databased Logics
+#### Speed up filtered lookups for specific users
+```sql
+CREATE INDEX idx_wallet_transactions_user_type 
+ON public.wallet_transactions (user_id, type);
+```
+
+#### Speed up chronological sorting
+```sql
+CREATE INDEX idx_wallet_transactions_created_at 
+ON public.wallet_transactions (created_at DESC);
+```
+
+---
+
+
 ### Policies
 
+#### 1. Only allow insert with is_admin = false
 ```sql
--- Only allow insert with is_admin = false
 create policy "users_insert_default_admin_false"
 on users
 for insert
@@ -261,8 +320,24 @@ with check (is_admin = false);
 -- Allow creators to see invites for their groups
 CREATE POLICY "Creators can view their group invites" ON ajo_invites
 FOR SELECT USING (auth.uid() = created_by);
-
 ```
+
+#### 2. Enable RLS on the realtime messages table
+```sql
+-- Enable RLS on the system's realtime table
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to listen ONLY to their specific topic (e.g., 'user:uuid')
+CREATE POLICY "Users can only listen to their own topic" 
+ON "realtime"."messages"
+FOR SELECT
+TO authenticated
+USING (
+  (topic = 'user:' || auth.uid()::text) 
+  AND (extension = 'broadcast')
+);
+```
+
 ---
 
 ### Tech Stack
