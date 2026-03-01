@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabaseServerClient";
+import { getSupabaseServer } from "@/lib/supabaseServerClient";
 import TransactionTable from '@/components/user/wallet/transactions/TransactionTable';
 import FilterTabs from '@/components/user/wallet/transactions/FilterTabs';
 import UserNavbar from "@/components/layout/UserNavbar"; // Imported as requested
@@ -8,7 +8,7 @@ export default async function TransactionsPage({
 }: {
   searchParams: { type?: string; page?: string };
 }) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServer();
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
